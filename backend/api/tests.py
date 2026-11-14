@@ -1,4 +1,13 @@
+import json
+import os
+from pathlib import Path
+from unittest.mock import patch
+
+import pandas as pd
+from django.core.management import call_command
 from django.test import Client, TestCase
+
+from datasources.errors import DataSourceTimeout
 
 
 class CsrfTests(TestCase):
@@ -26,11 +35,6 @@ class CsrfTests(TestCase):
         res = self.post_json("/api/chat/", {"message": "Tell me about wheat"})
         self.assertEqual(res.status_code, 200)
 
-import json
-from pathlib import Path
-from unittest.mock import patch
-
-import pandas as pd
 
 SAMPLE_POWER = (
     Path(__file__).resolve().parents[1]
@@ -119,3 +123,94 @@ class AnalyzeResponseTests(TestCase):
         why = data["strategies"][1]["why_suggested"]
 
         self.assertTrue(any("\u0600" <= ch <= "\u06ff" for ch in why))
+
+
+def _power_down(lat, lon):
+    raise DataSourceTimeout("NASA POWER", "timed out")
+
+
+class AnalyzeValidationTests(TestCase):
+    """Bad requests are rejected with 400 before any NASA data is fetched."""
+
+    def post(self, body):
+        return self.client.post("/api/analyze/", json.dumps(body), content_type="application/json")
+
+    def assert_rejected(self, field, **changes):
+        res = self.post({**ANALYZE_BODY, **changes})
+        self.assertEqual(res.status_code, 400, res.content[:300])
+        self.assertIn(field, res.json()["errors"])
+
+    def test_latitude_out_of_range(self):
+        self.assert_rejected("lat", lat=95)
+
+    def test_priority_out_of_range(self):
+        self.assert_rejected("priorities", priorities={**ANALYZE_BODY["priorities"], "water": 9})
+
+    def test_unknown_constraint_value(self):
+        self.assert_rejected(
+            "constraints", constraints={**ANALYZE_BODY["constraints"], "water_availability": "lots"}
+        )
+
+    def test_scenario_beyond_slider_range(self):
+        self.assert_rejected("scenario", scenario={"rain_pct": -80, "temp_c": 0})
+
+    def test_unknown_language(self):
+        self.assert_rejected("lang", lang="fr")
+
+    def test_get_is_not_allowed(self):
+        self.assertEqual(self.client.get("/api/analyze/").status_code, 405)
+
+
+@patch("api.views.get_soil", lambda lat, lon: (None, {"cache_hit": False}))
+@patch("api.views.get_power_daily", _power_down)
+class AnalyzeDataSourceDownTests(TestCase):
+    """NASA POWER down: featured pins use the offline snapshot, other points get a clear 503."""
+
+    def post(self, lat, lon):
+        body = {**ANALYZE_BODY, "lat": lat, "lon": lon}
+        return self.client.post("/api/analyze/", json.dumps(body), content_type="application/json")
+
+    def test_clicked_point_without_cache_returns_503(self):
+        res = self.post(0.5, 20.5)
+        self.assertEqual(res.status_code, 503)
+        self.assertIn("message", res.json())
+
+    def test_featured_pin_falls_back_to_snapshot(self):
+        res = self.post(31.30, 73.00)
+        self.assertEqual(res.status_code, 200, res.content[:300])
+        quality = res.json()["data_quality"]
+        self.assertTrue(quality["fallback_used"])
+        self.assertIn("SMAP", quality["sources"])
+
+
+class ListEndpointTests(TestCase):
+    def test_locations_lists_the_three_featured_pins(self):
+        res = self.client.get("/api/locations/")
+        self.assertEqual(res.status_code, 200)
+        slugs = {pin["slug"] for pin in res.json()["results"]}
+        self.assertEqual(slugs, {"sindh-hyderabad", "punjab-faisalabad", "iowa-central"})
+
+    def test_crops_have_urdu_names_and_sources(self):
+        res = self.client.get("/api/crops/")
+        self.assertEqual(res.status_code, 200)
+        crops = res.json()["results"]
+        self.assertEqual(len(crops), 14)
+        for crop in crops:
+            self.assertTrue(crop["name_ur"], crop["slug"])
+            self.assertTrue(crop["sources"], crop["slug"])
+
+
+class SeedCommandTests(TestCase):
+    def test_seed_commands_are_idempotent(self):
+        from crops.models import Crop, CropCalendar, RotationTemplate
+        from locations.models import Location, LocationCache
+
+        for _ in range(2):
+            call_command("seed_crops", stdout=open(os.devnull, "w"))
+            call_command("load_prepulled", stdout=open(os.devnull, "w"))
+
+        self.assertEqual(Crop.objects.count(), 14)
+        self.assertEqual(CropCalendar.objects.count(), 19)
+        self.assertTrue(RotationTemplate.objects.filter(key="current_alt_rice_wheat").exists())
+        self.assertEqual(Location.objects.count(), 3)
+        self.assertEqual(LocationCache.objects.filter(kind="power").count(), 3)

@@ -144,14 +144,33 @@ def _stress_by_month(df, years, extreme_thr):
     }
 
 
+def _trend_is_significant(years, values):
+    """True when a linear trend is clearly larger than year-to-year noise.
+
+    Uses the t-statistic of the correlation (|t| > TREND_T_CRITICAL, about p < 0.05 for
+    ~20 years). With 20 noisy years a slope can look large and still be noise, so the UI
+    should only call it a trend when this is True.
+    """
+    if len(values) < 5 or np.std(values) == 0:
+        return False
+    r = np.corrcoef(years, values)[0, 1]
+    if not np.isfinite(r) or abs(r) >= 1:
+        return bool(np.isfinite(r))
+    t = r * np.sqrt((len(values) - 2) / (1 - r * r))
+    return bool(abs(t) > C.TREND_T_CRITICAL)
+
+
 def _trends(df):
     annual = df.groupby("year").agg(p=("precip", lambda s: s.sum(min_count=1)), t=("t2m", "mean")).dropna()
     if len(annual) < 3:
-        return {"precip_mm_per_decade": None, "t_mean_c_per_decade": None}
+        return {"precip_mm_per_decade": None, "t_mean_c_per_decade": None,
+                "precip_trend_significant": False, "t_mean_trend_significant": False}
     yrs = annual.index.to_numpy(dtype=float)
     return {
         "precip_mm_per_decade": _r(np.polyfit(yrs, annual["p"], 1)[0] * 10, 1),
         "t_mean_c_per_decade": _r(np.polyfit(yrs, annual["t"], 1)[0] * 10, 2),
+        "precip_trend_significant": _trend_is_significant(yrs, annual["p"].to_numpy(dtype=float)),
+        "t_mean_trend_significant": _trend_is_significant(yrs, annual["t"].to_numpy(dtype=float)),
     }
 
 

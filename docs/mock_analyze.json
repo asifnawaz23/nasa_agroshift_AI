@@ -256,7 +256,9 @@
       ],
       "trends": {
         "precip_mm_per_decade": -100.1,
-        "t_mean_c_per_decade": 0.71
+        "t_mean_c_per_decade": 0.71,
+        "precip_trend_significant": false,
+        "t_mean_trend_significant": false
       },
       "year_stress_flags": {
         "2006": [
@@ -513,7 +515,9 @@
       ],
       "trends": {
         "precip_mm_per_decade": -70.0,
-        "t_mean_c_per_decade": 0.71
+        "t_mean_c_per_decade": 0.71,
+        "precip_trend_significant": false,
+        "t_mean_trend_significant": false
       },
       "year_stress_flags": {
         "2006": [

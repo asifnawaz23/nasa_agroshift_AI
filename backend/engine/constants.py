@@ -98,3 +98,9 @@ DEFAULT_WATER_AVAILABILITY = {"temperate": "rainfed", "subtropical": "irrigated"
 # ---------------------------------------------------------------------------
 CONFIDENCE_HIGH_MIN_YEARS = 15
 CONFIDENCE_HIGH_MIN_CORR = 0.85
+
+# ---------------------------------------------------------------------------
+# Trends: a 20-year linear trend is only called a trend when |t| of the
+# correlation is above this value (about p < 0.05 for 20 years).
+# ---------------------------------------------------------------------------
+TREND_T_CRITICAL = 2.1

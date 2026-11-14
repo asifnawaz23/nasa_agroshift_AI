@@ -364,7 +364,7 @@ Confidence is `low` for a clicked (non-featured) point, lots of missing data, or
 |---|---|---|
 | `annual_rainfall_mm`, `average_temperature_c` | number | Annual summary |
 | `monthly` | array of 12 objects | One row per month, `month` 1 to 12 (chart data) |
-| `trends` | object | `precip_mm_per_decade`, `t_mean_c_per_decade` |
+| `trends` | object | `precip_mm_per_decade`, `t_mean_c_per_decade`, plus `precip_trend_significant` and `t_mean_trend_significant`: only call it a trend in the UI when the flag is `true` |
 | `year_stress_flags` | object | `{"2012": ["drought", "heat"]}` |
 | `frost_free_season` | object | `median_days`, `p10`, `p90` |
 | `soil_moisture_source` | string | `smap` or `power_root_wetness` |

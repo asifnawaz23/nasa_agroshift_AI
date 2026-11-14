@@ -62,13 +62,12 @@
       ]}
     },
     {
-      "zone": "subtropical", "key": "soil_builder", "name": "Cotton–berseem / mungbean–maize–wheat",
-      "description": "Replaces one wheat crop with berseem (winter fodder legume), adds a short summer mungbean after it, then maize and wheat. Two legumes per cycle, more families, more ground cover.",
+      "zone": "subtropical", "key": "soil_builder", "name": "Cotton–berseem / mungbean–wheat",
+      "description": "Replaces one wheat crop with berseem (winter fodder legume), then a kharif mungbean sown in July and wheat. Two legumes per cycle, more families, less water. Retimed 2026-11-15: the earlier April mungbean and July maize flowered in peak heat (more critical heat alerts than the current rotation in Faisalabad and Sindh).",
       "rotation": {"cycle_years": 2, "steps": [
         {"year": 1, "crop": "cotton",   "sow_month": 5,  "harvest_month": 11},
         {"year": 1, "crop": "berseem",  "sow_month": 11, "harvest_month": 4},
-        {"year": 2, "crop": "mungbean", "sow_month": 4,  "harvest_month": 6},
-        {"year": 2, "crop": "maize",    "sow_month": 7,  "harvest_month": 11},
+        {"year": 2, "crop": "mungbean", "sow_month": 7,  "harvest_month": 10},
         {"year": 2, "crop": "wheat",    "sow_month": 11, "harvest_month": 4}
       ]}
     }

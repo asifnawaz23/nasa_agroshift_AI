@@ -19,7 +19,11 @@ from datasources.prepulled import find_featured, load_prepulled
 from engine.alerts import build_alerts
 from engine.climate_profile import build_climate_profile
 from engine.constants import (
+    CONFIDENCE_HIGH_MIN_CORR,
+    CONFIDENCE_HIGH_MIN_YEARS,
     MAX_MISSING_FRACTION,
+    SCENARIO_LOW_CONFIDENCE_RAIN_PCT,
+    SCENARIO_LOW_CONFIDENCE_TEMP_C,
     MIN_YEARS_FOR_CLIMATOLOGY,
     VULNERABLE_DRY_SPELL_PROB,
     VULNERABLE_HEAT_DAYS,
@@ -56,10 +60,6 @@ def _error_response(message, errors=None, status=400):
 # engine.constants; frost and soil drying match the "moderate" alert level.
 VULNERABLE_FROST_DAYS = 1.0
 VULNERABLE_SOIL_MOISTURE_ANOMALY = -1.0
-SCENARIO_LOW_CONFIDENCE_TEMP_C = 3
-SCENARIO_LOW_CONFIDENCE_RAIN_PCT = 30
-CONFIDENCE_MIN_YEARS = 15
-CONFIDENCE_MIN_PRISM_CORR = 0.85
 
 
 def _month_value(data, month):
@@ -255,13 +255,13 @@ def _confidence(profile, data_tier, scenario, featured):
 
     if (
         data_tier == "us_enhanced"
-        and n_years >= CONFIDENCE_MIN_YEARS
+        and n_years >= CONFIDENCE_HIGH_MIN_YEARS
         and corr is not None
-        and corr > CONFIDENCE_MIN_PRISM_CORR
+        and corr > CONFIDENCE_HIGH_MIN_CORR
     ):
         return "high"
 
-    if n_years >= CONFIDENCE_MIN_YEARS:
+    if n_years >= CONFIDENCE_HIGH_MIN_YEARS:
         return "medium"
 
     return "low"
