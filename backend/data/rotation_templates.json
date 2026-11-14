@@ -1,0 +1,76 @@
+{
+  "_notes": [
+    "Format follows plan section 5. Each step: year in the cycle, crop slug, sow_month, harvest_month.",
+    "A harvest_month smaller than sow_month means the crop is harvested in the next calendar year (it spans into the next cycle year).",
+    "companion: true marks a crop sown into a standing crop (for example red clover underseeded in oats); overlaps with it are allowed.",
+    "Subtropical templates are APPROXIMATE for Sindh and Punjab; review with local farmers or extension staff."
+  ],
+  "templates": [
+    {
+      "zone": "temperate", "key": "current_default", "name": "Corn–soybean",
+      "description": "The common two-year rotation in central Iowa. Strong markets and familiar equipment, but the soil is bare from harvest to planting and there are only two crop families.",
+      "rotation": {"cycle_years": 2, "steps": [
+        {"year": 1, "crop": "maize",   "sow_month": 5, "harvest_month": 10},
+        {"year": 2, "crop": "soybean", "sow_month": 5, "harvest_month": 10}
+      ]}
+    },
+    {
+      "zone": "temperate", "key": "water_saver", "name": "Sorghum–soybean–winter wheat + rye cover",
+      "description": "Swaps maize for drought-tolerant sorghum, adds winter wheat so the field is covered over winter, and a rye cover after wheat. Lower summer water demand and less bare soil.",
+      "rotation": {"cycle_years": 3, "steps": [
+        {"year": 1, "crop": "sorghum",    "sow_month": 5,  "harvest_month": 10},
+        {"year": 2, "crop": "soybean",    "sow_month": 5,  "harvest_month": 9},
+        {"year": 2, "crop": "wheat",      "sow_month": 10, "harvest_month": 7},
+        {"year": 3, "crop": "cereal_rye", "sow_month": 9,  "harvest_month": 4}
+      ]}
+    },
+    {
+      "zone": "temperate", "key": "soil_builder", "name": "Corn + rye cover–soybean–oats with red clover",
+      "description": "Adds a winter rye cover after corn, a small grain (oats) to break the corn–soybean pest cycle, and red clover underseeded in the oats to fix nitrogen and add organic matter.",
+      "rotation": {"cycle_years": 3, "steps": [
+        {"year": 1, "crop": "maize",      "sow_month": 5,  "harvest_month": 10},
+        {"year": 1, "crop": "cereal_rye", "sow_month": 10, "harvest_month": 4},
+        {"year": 2, "crop": "soybean",    "sow_month": 5,  "harvest_month": 10},
+        {"year": 3, "crop": "oats",       "sow_month": 4,  "harvest_month": 7},
+        {"year": 3, "crop": "red_clover", "sow_month": 4,  "harvest_month": 10, "companion": true}
+      ]}
+    },
+    {
+      "zone": "subtropical", "key": "current_default", "name": "Cotton–wheat",
+      "description": "The common annual double crop in Sindh and southern Punjab: kharif cotton then rabi wheat. High water use from cotton and only grass/cotton families.",
+      "rotation": {"cycle_years": 1, "steps": [
+        {"year": 1, "crop": "cotton", "sow_month": 5,  "harvest_month": 11},
+        {"year": 1, "crop": "wheat",  "sow_month": 11, "harvest_month": 4}
+      ]}
+    },
+    {
+      "zone": "subtropical", "key": "current_alt_rice_wheat", "name": "Rice–wheat",
+      "description": "Alternative current rotation for central Punjab: kharif rice then rabi wheat. Very high water use and puddling damages soil structure.",
+      "rotation": {"cycle_years": 1, "steps": [
+        {"year": 1, "crop": "rice",  "sow_month": 7,  "harvest_month": 11},
+        {"year": 1, "crop": "wheat", "sow_month": 11, "harvest_month": 4}
+      ]}
+    },
+    {
+      "zone": "subtropical", "key": "water_saver", "name": "Sorghum–chickpea / cotton–wheat",
+      "description": "Halves the cotton area: every other year grows drought-tolerant sorghum in kharif and chickpea on residual moisture in rabi. Cuts seasonal water demand and adds a nitrogen-fixing pulse.",
+      "rotation": {"cycle_years": 2, "steps": [
+        {"year": 1, "crop": "sorghum",  "sow_month": 7,  "harvest_month": 10},
+        {"year": 1, "crop": "chickpea", "sow_month": 11, "harvest_month": 4},
+        {"year": 2, "crop": "cotton",   "sow_month": 5,  "harvest_month": 11},
+        {"year": 2, "crop": "wheat",    "sow_month": 11, "harvest_month": 4}
+      ]}
+    },
+    {
+      "zone": "subtropical", "key": "soil_builder", "name": "Cotton–berseem / mungbean–maize–wheat",
+      "description": "Replaces one wheat crop with berseem (winter fodder legume), adds a short summer mungbean after it, then maize and wheat. Two legumes per cycle, more families, more ground cover.",
+      "rotation": {"cycle_years": 2, "steps": [
+        {"year": 1, "crop": "cotton",   "sow_month": 5,  "harvest_month": 11},
+        {"year": 1, "crop": "berseem",  "sow_month": 11, "harvest_month": 4},
+        {"year": 2, "crop": "mungbean", "sow_month": 4,  "harvest_month": 6},
+        {"year": 2, "crop": "maize",    "sow_month": 7,  "harvest_month": 11},
+        {"year": 2, "crop": "wheat",    "sow_month": 11, "harvest_month": 4}
+      ]}
+    }
+  ]
+}
