@@ -1,8 +1,8 @@
 {
   "analysis_id": "mock-iowa-hot-dry",
   "location": {
-    "lat": 42.0,
-    "lon": -93.6,
+    "lat": 42.1,
+    "lon": -93.45,
     "name": "Central Iowa (near Ames)",
     "country": "US",
     "zone": "temperate",
@@ -16,7 +16,8 @@
     "tier": "us_enhanced",
     "sources": [
       "NASA POWER",
-      "SoilGrids"
+      "SoilGrids",
+      "NDVI"
     ],
     "warnings": [],
     "years_covered": [
@@ -32,7 +33,7 @@
       "fetched_at": "2026-11-15T00:00:00+00:00"
     },
     "soil_cache": {
-      "grid_key": "42.00_-93.60",
+      "grid_key": "42.10_-93.45",
       "cache_hit": true,
       "fallback_used": false,
       "fetched_at": "2026-11-15T00:00:00+00:00",
@@ -63,7 +64,7 @@
           "dry_spell_prob": 0.9,
           "extreme_rain_days": 0.0,
           "soil_moisture_anomaly": -0.71,
-          "ndvi": null
+          "ndvi": 0.21
         },
         {
           "month": 2,
@@ -71,7 +72,7 @@
           "t_max": 0.8,
           "t_min": -9.9,
           "precip_mm": 25.7,
-          "et0_mm": 22.0,
+          "et0_mm": 21.9,
           "deficit_mm": 0.0,
           "root_wetness": 0.53,
           "heat_days": 0.0,
@@ -80,7 +81,7 @@
           "dry_spell_prob": 0.95,
           "extreme_rain_days": 0.1,
           "soil_moisture_anomaly": -0.69,
-          "ndvi": null
+          "ndvi": 0.21
         },
         {
           "month": 3,
@@ -88,8 +89,8 @@
           "t_max": 9.5,
           "t_min": -2.3,
           "precip_mm": 51.6,
-          "et0_mm": 56.8,
-          "deficit_mm": 5.2,
+          "et0_mm": 56.7,
+          "deficit_mm": 5.1,
           "root_wetness": 0.54,
           "heat_days": 0.0,
           "severe_heat_days": 0.0,
@@ -97,7 +98,7 @@
           "dry_spell_prob": 0.75,
           "extreme_rain_days": 0.2,
           "soil_moisture_anomaly": -0.66,
-          "ndvi": null
+          "ndvi": 0.22
         },
         {
           "month": 4,
@@ -106,7 +107,7 @@
           "t_min": 3.1,
           "precip_mm": 86.5,
           "et0_mm": 94.3,
-          "deficit_mm": 7.9,
+          "deficit_mm": 7.8,
           "root_wetness": 0.55,
           "heat_days": 0.0,
           "severe_heat_days": 0.0,
@@ -114,7 +115,7 @@
           "dry_spell_prob": 0.35,
           "extreme_rain_days": 0.6,
           "soil_moisture_anomaly": -0.85,
-          "ndvi": null
+          "ndvi": 0.24
         },
         {
           "month": 5,
@@ -123,7 +124,7 @@
           "t_min": 10.2,
           "precip_mm": 111.8,
           "et0_mm": 135.4,
-          "deficit_mm": 23.7,
+          "deficit_mm": 23.6,
           "root_wetness": 0.55,
           "heat_days": 0.1,
           "severe_heat_days": 0.0,
@@ -131,7 +132,7 @@
           "dry_spell_prob": 0.3,
           "extreme_rain_days": 0.7,
           "soil_moisture_anomaly": -0.88,
-          "ndvi": null
+          "ndvi": 0.3
         },
         {
           "month": 6,
@@ -148,7 +149,7 @@
           "dry_spell_prob": 0.2,
           "extreme_rain_days": 0.9,
           "soil_moisture_anomaly": -0.73,
-          "ndvi": null
+          "ndvi": 0.68
         },
         {
           "month": 7,
@@ -165,7 +166,7 @@
           "dry_spell_prob": 0.35,
           "extreme_rain_days": 0.8,
           "soil_moisture_anomaly": -0.46,
-          "ndvi": null
+          "ndvi": 0.89
         },
         {
           "month": 8,
@@ -173,8 +174,8 @@
           "t_max": 28.9,
           "t_min": 17.4,
           "precip_mm": 108.4,
-          "et0_mm": 143.3,
-          "deficit_mm": 34.9,
+          "et0_mm": 143.2,
+          "deficit_mm": 34.8,
           "root_wetness": 0.45,
           "heat_days": 1.7,
           "severe_heat_days": 0.0,
@@ -182,7 +183,7 @@
           "dry_spell_prob": 0.35,
           "extreme_rain_days": 0.9,
           "soil_moisture_anomaly": -0.34,
-          "ndvi": null
+          "ndvi": 0.84
         },
         {
           "month": 9,
@@ -190,8 +191,8 @@
           "t_max": 25.3,
           "t_min": 12.9,
           "precip_mm": 77.0,
-          "et0_mm": 104.9,
-          "deficit_mm": 27.9,
+          "et0_mm": 104.8,
+          "deficit_mm": 27.8,
           "root_wetness": 0.45,
           "heat_days": 0.4,
           "severe_heat_days": 0.0,
@@ -199,7 +200,7 @@
           "dry_spell_prob": 0.7,
           "extreme_rain_days": 0.3,
           "soil_moisture_anomaly": -0.66,
-          "ndvi": null
+          "ndvi": 0.42
         },
         {
           "month": 10,
@@ -207,7 +208,7 @@
           "t_max": 17.3,
           "t_min": 5.3,
           "precip_mm": 71.6,
-          "et0_mm": 61.3,
+          "et0_mm": 61.2,
           "deficit_mm": 0.0,
           "root_wetness": 0.47,
           "heat_days": 0.0,
@@ -216,7 +217,7 @@
           "dry_spell_prob": 0.9,
           "extreme_rain_days": 0.6,
           "soil_moisture_anomaly": -0.88,
-          "ndvi": null
+          "ndvi": 0.25
         },
         {
           "month": 11,
@@ -224,7 +225,7 @@
           "t_max": 8.8,
           "t_min": -1.5,
           "precip_mm": 37.2,
-          "et0_mm": 29.0,
+          "et0_mm": 28.9,
           "deficit_mm": 0.0,
           "root_wetness": 0.49,
           "heat_days": 0.0,
@@ -233,7 +234,7 @@
           "dry_spell_prob": 0.9,
           "extreme_rain_days": 0.1,
           "soil_moisture_anomaly": -0.69,
-          "ndvi": null
+          "ndvi": 0.23
         },
         {
           "month": 12,
@@ -241,7 +242,7 @@
           "t_max": 1.0,
           "t_min": -7.6,
           "precip_mm": 39.3,
-          "et0_mm": 14.9,
+          "et0_mm": 14.8,
           "deficit_mm": 0.0,
           "root_wetness": 0.5,
           "heat_days": 0.0,
@@ -250,7 +251,7 @@
           "dry_spell_prob": 0.85,
           "extreme_rain_days": 0.1,
           "soil_moisture_anomaly": -0.77,
-          "ndvi": null
+          "ndvi": 0.22
         }
       ],
       "trends": {
@@ -285,7 +286,14 @@
         "p90": 203
       },
       "soil_moisture_source": "power_root_wetness",
-      "bare_months_observed": null,
+      "bare_months_observed": [
+        1,
+        2,
+        3,
+        4,
+        11,
+        12
+      ],
       "basis": "historical"
     },
     "scenario": {
@@ -304,8 +312,8 @@
           "t_max": 1.2,
           "t_min": -8.0,
           "precip_mm": 16.6,
-          "et0_mm": 17.3,
-          "deficit_mm": 0.6,
+          "et0_mm": 17.2,
+          "deficit_mm": 0.5,
           "root_wetness": 0.51,
           "heat_days": 0.0,
           "severe_heat_days": 0.0,
@@ -313,7 +321,7 @@
           "dry_spell_prob": 1.0,
           "extreme_rain_days": 0.0,
           "soil_moisture_anomaly": -0.89,
-          "ndvi": null
+          "ndvi": 0.21
         },
         {
           "month": 2,
@@ -321,8 +329,8 @@
           "t_max": 3.8,
           "t_min": -6.9,
           "precip_mm": 18.0,
-          "et0_mm": 26.9,
-          "deficit_mm": 8.9,
+          "et0_mm": 26.8,
+          "deficit_mm": 8.8,
           "root_wetness": 0.52,
           "heat_days": 0.0,
           "severe_heat_days": 0.0,
@@ -330,7 +338,7 @@
           "dry_spell_prob": 0.95,
           "extreme_rain_days": 0.0,
           "soil_moisture_anomaly": -0.83,
-          "ndvi": null
+          "ndvi": 0.21
         },
         {
           "month": 3,
@@ -338,8 +346,8 @@
           "t_max": 12.5,
           "t_min": 0.7,
           "precip_mm": 36.1,
-          "et0_mm": 64.7,
-          "deficit_mm": 28.6,
+          "et0_mm": 64.6,
+          "deficit_mm": 28.5,
           "root_wetness": 0.52,
           "heat_days": 0.0,
           "severe_heat_days": 0.0,
@@ -347,7 +355,7 @@
           "dry_spell_prob": 0.8,
           "extreme_rain_days": 0.0,
           "soil_moisture_anomaly": -1.02,
-          "ndvi": null
+          "ndvi": 0.22
         },
         {
           "month": 4,
@@ -355,8 +363,8 @@
           "t_max": 19.0,
           "t_min": 6.1,
           "precip_mm": 60.5,
-          "et0_mm": 104.6,
-          "deficit_mm": 44.0,
+          "et0_mm": 104.5,
+          "deficit_mm": 43.9,
           "root_wetness": 0.51,
           "heat_days": 0.0,
           "severe_heat_days": 0.0,
@@ -364,7 +372,7 @@
           "dry_spell_prob": 0.4,
           "extreme_rain_days": 0.3,
           "soil_moisture_anomaly": -1.34,
-          "ndvi": null
+          "ndvi": 0.24
         },
         {
           "month": 5,
@@ -373,15 +381,15 @@
           "t_min": 13.2,
           "precip_mm": 78.2,
           "et0_mm": 147.3,
-          "deficit_mm": 69.1,
+          "deficit_mm": 69.0,
           "root_wetness": 0.5,
           "heat_days": 0.3,
           "severe_heat_days": 0.0,
           "frost_days": 0.0,
           "dry_spell_prob": 0.4,
           "extreme_rain_days": 0.3,
-          "soil_moisture_anomaly": -1.59,
-          "ndvi": null
+          "soil_moisture_anomaly": -1.58,
+          "ndvi": 0.3
         },
         {
           "month": 6,
@@ -398,7 +406,7 @@
           "dry_spell_prob": 0.3,
           "extreme_rain_days": 0.5,
           "soil_moisture_anomaly": -1.28,
-          "ndvi": null
+          "ndvi": 0.68
         },
         {
           "month": 7,
@@ -415,7 +423,7 @@
           "dry_spell_prob": 0.45,
           "extreme_rain_days": 0.1,
           "soil_moisture_anomaly": -1.07,
-          "ndvi": null
+          "ndvi": 0.89
         },
         {
           "month": 8,
@@ -423,8 +431,8 @@
           "t_max": 31.9,
           "t_min": 20.4,
           "precip_mm": 75.9,
-          "et0_mm": 153.8,
-          "deficit_mm": 77.9,
+          "et0_mm": 153.7,
+          "deficit_mm": 77.8,
           "root_wetness": 0.41,
           "heat_days": 5.6,
           "severe_heat_days": 0.8,
@@ -432,7 +440,7 @@
           "dry_spell_prob": 0.5,
           "extreme_rain_days": 0.4,
           "soil_moisture_anomaly": -0.79,
-          "ndvi": null
+          "ndvi": 0.84
         },
         {
           "month": 9,
@@ -440,8 +448,8 @@
           "t_max": 28.3,
           "t_min": 15.9,
           "precip_mm": 53.9,
-          "et0_mm": 113.5,
-          "deficit_mm": 59.6,
+          "et0_mm": 113.3,
+          "deficit_mm": 59.4,
           "root_wetness": 0.42,
           "heat_days": 1.9,
           "severe_heat_days": 0.1,
@@ -449,7 +457,7 @@
           "dry_spell_prob": 0.7,
           "extreme_rain_days": 0.1,
           "soil_moisture_anomaly": -0.95,
-          "ndvi": null
+          "ndvi": 0.42
         },
         {
           "month": 10,
@@ -457,8 +465,8 @@
           "t_max": 20.3,
           "t_min": 8.3,
           "precip_mm": 50.1,
-          "et0_mm": 67.6,
-          "deficit_mm": 17.5,
+          "et0_mm": 67.5,
+          "deficit_mm": 17.4,
           "root_wetness": 0.44,
           "heat_days": 0.1,
           "severe_heat_days": 0.0,
@@ -466,7 +474,7 @@
           "dry_spell_prob": 0.95,
           "extreme_rain_days": 0.2,
           "soil_moisture_anomaly": -1.22,
-          "ndvi": null
+          "ndvi": 0.25
         },
         {
           "month": 11,
@@ -474,8 +482,8 @@
           "t_max": 11.8,
           "t_min": 1.5,
           "precip_mm": 26.0,
-          "et0_mm": 33.1,
-          "deficit_mm": 7.0,
+          "et0_mm": 32.9,
+          "deficit_mm": 6.9,
           "root_wetness": 0.47,
           "heat_days": 0.0,
           "severe_heat_days": 0.0,
@@ -483,7 +491,7 @@
           "dry_spell_prob": 0.95,
           "extreme_rain_days": 0.0,
           "soil_moisture_anomaly": -0.95,
-          "ndvi": null
+          "ndvi": 0.23
         },
         {
           "month": 12,
@@ -491,7 +499,7 @@
           "t_max": 4.0,
           "t_min": -4.6,
           "precip_mm": 27.5,
-          "et0_mm": 18.0,
+          "et0_mm": 17.9,
           "deficit_mm": 0.0,
           "root_wetness": 0.49,
           "heat_days": 0.0,
@@ -500,7 +508,7 @@
           "dry_spell_prob": 0.9,
           "extreme_rain_days": 0.1,
           "soil_moisture_anomaly": -0.96,
-          "ndvi": null
+          "ndvi": 0.22
         }
       ],
       "trends": {
@@ -564,23 +572,30 @@
         "p90": 224
       },
       "soil_moisture_source": "power_root_wetness",
-      "bare_months_observed": null,
+      "bare_months_observed": [
+        1,
+        2,
+        3,
+        4,
+        11,
+        12
+      ],
       "basis": "simulated"
     }
   },
   "soil": {
     "measured": {
       "available": true,
-      "clay_pct": 29.9,
-      "sand_pct": 22.4,
-      "silt_pct": 47.8,
-      "soc_g_kg": 19.7,
-      "organic_matter_pct": 3.4,
+      "clay_pct": 38.1,
+      "sand_pct": 23.4,
+      "silt_pct": 38.5,
+      "soc_g_kg": 21.1,
+      "organic_matter_pct": 3.64,
       "ph": 6.5,
       "texture": "clay loam",
       "texture_group": "fine",
       "drainage_hint": "slow",
-      "erodibility_hint": "moderate",
+      "erodibility_hint": "low",
       "depth": "0-30cm",
       "source": "ISRIC SoilGrids",
       "resolution_m": 250
@@ -744,7 +759,7 @@
       "triggered_by": [
         {
           "variable": "soil_moisture_anomaly",
-          "value": -1.59,
+          "value": -1.58,
           "threshold": -1.0
         }
       ],
@@ -807,7 +822,7 @@
       "triggered_by": [
         {
           "variable": "deficit_mm",
-          "value": 77.9,
+          "value": 77.8,
           "threshold": 30.0
         }
       ],
@@ -828,7 +843,7 @@
       "triggered_by": [
         {
           "variable": "deficit_mm",
-          "value": 77.9,
+          "value": 77.8,
           "threshold": 30.0
         }
       ],
@@ -929,20 +944,20 @@
         ]
       },
       "scores": {
-        "overall": 54.7,
+        "overall": 55.5,
         "water_fit": 38.8,
         "climate_risk": 58.1,
         "soil_health": 55.0,
-        "erosion_infiltration": 42.5,
+        "erosion_infiltration": 46.9,
         "pest_break": 67.5,
         "income": 78.1
       },
       "baseline_scores": {
-        "overall": 60.1,
+        "overall": 60.9,
         "water_fit": 46.9,
         "climate_risk": 77.8,
         "soil_health": 55.0,
-        "erosion_infiltration": 42.5,
+        "erosion_infiltration": 46.9,
         "pest_break": 67.5,
         "income": 78.1
       },
@@ -1053,20 +1068,20 @@
         ]
       },
       "scores": {
-        "overall": 61.5,
+        "overall": 61.9,
         "water_fit": 49.3,
         "climate_risk": 73.0,
         "soil_health": 59.4,
-        "erosion_infiltration": 70.8,
+        "erosion_infiltration": 73.1,
         "pest_break": 50.0,
         "income": 59.4
       },
       "baseline_scores": {
-        "overall": 64.9,
+        "overall": 65.3,
         "water_fit": 56.4,
         "climate_risk": 83.5,
         "soil_health": 59.4,
-        "erosion_infiltration": 70.8,
+        "erosion_infiltration": 73.1,
         "pest_break": 50.0,
         "income": 59.4
       },
@@ -1185,20 +1200,20 @@
         ]
       },
       "scores": {
-        "overall": 55.8,
-        "water_fit": 35.0,
-        "climate_risk": 61.6,
+        "overall": 56.4,
+        "water_fit": 35.1,
+        "climate_risk": 61.7,
         "soil_health": 60.5,
-        "erosion_infiltration": 65.3,
+        "erosion_infiltration": 68.2,
         "pest_break": 60.5,
         "income": 51.2
       },
       "baseline_scores": {
-        "overall": 61.2,
+        "overall": 61.8,
         "water_fit": 42.8,
         "climate_risk": 81.8,
         "soil_health": 60.5,
-        "erosion_infiltration": 65.3,
+        "erosion_infiltration": 68.2,
         "pest_break": 60.5,
         "income": 51.2
       },

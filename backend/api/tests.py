@@ -38,8 +38,8 @@ SAMPLE_POWER = (
 )
 
 ANALYZE_BODY = {
-    "lat": 42.0,
-    "lon": -93.6,
+    "lat": 42.10,
+    "lon": -93.45,
     "current_rotation": None,
     "priorities": {"water": 4, "soil": 5, "income": 3, "erosion": 4, "pest": 2},
     "constraints": {
