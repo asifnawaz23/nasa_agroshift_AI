@@ -26,9 +26,11 @@ from engine.constants import (
 )
 from engine.knowledge import (
     bare_fraction_by_month,
+    field_occupancy,
     load_calendars,
     load_crops,
     load_templates,
+    sensitive_windows,
 )
 
 from engine.strategies import build_strategies
@@ -48,6 +50,25 @@ def _error_response(message, errors=None, status=400):
         "message": message,
         "errors": errors or {},
     }, status=status)
+
+
+# Thresholds for the vulnerable-month view. Heat and dry-spell values come from
+# engine.constants; frost and soil drying match the "moderate" alert level.
+VULNERABLE_FROST_DAYS = 1.0
+VULNERABLE_SOIL_MOISTURE_ANOMALY = -1.0
+SCENARIO_LOW_CONFIDENCE_TEMP_C = 3
+SCENARIO_LOW_CONFIDENCE_RAIN_PCT = 30
+CONFIDENCE_MIN_YEARS = 15
+CONFIDENCE_MIN_PRISM_CORR = 0.85
+
+
+def _month_value(data, month):
+    return (data or {}).get(str(month))
+
+
+def _scenario_active(scenario):
+    scenario = scenario or {}
+    return scenario.get("rain_pct", 0) != 0 or scenario.get("temp_c", 0) != 0
 
 
 def _climate_summary(profile):
@@ -75,6 +96,55 @@ def _climate_summary(profile):
     }
 
 
+def _climate_block(profile):
+    """Annual summary plus the month-by-month series the charts need."""
+    climatology = profile["monthly_climatology"]
+    water_balance = profile["water_balance_by_month"]
+    stress = profile["stress_by_month"]
+
+    monthly = []
+
+    for month in range(1, 13):
+        clim = climatology[str(month)]
+        balance = water_balance.get(str(month), {})
+
+        monthly.append({
+            "month": month,
+            "t_mean": clim["t_mean"],
+            "t_max": clim["t_max"],
+            "t_min": clim["t_min"],
+            "precip_mm": clim["precip_mm"],
+            "et0_mm": clim["et0_mm"],
+            "deficit_mm": balance.get("deficit_mm"),
+            "root_wetness": clim["root_wetness"],
+            "heat_days": _month_value(stress.get("heat_days"), month),
+            "severe_heat_days": _month_value(stress.get("severe_heat_days"), month),
+            "frost_days": _month_value(stress.get("frost_days"), month),
+            "dry_spell_prob": _month_value(stress.get("dry_spell_prob"), month),
+            "extreme_rain_days": _month_value(stress.get("extreme_rain_days"), month),
+            "soil_moisture_anomaly": _month_value(
+                profile.get("soil_moisture_anomaly_by_month"), month
+            ),
+            "ndvi": _month_value(profile.get("ndvi_by_month"), month),
+        })
+
+    return {
+        **_climate_summary(profile),
+        "years_covered": profile["years_covered"],
+        "monthly": monthly,
+        "trends": profile["trends"],
+        "year_stress_flags": profile["year_stress_flags"],
+        "frost_free_season": profile["frost_free_season"],
+        "soil_moisture_source": profile.get("soil_moisture_source"),
+        "bare_months_observed": profile.get("bare_months_observed"),
+        "basis": (
+            "simulated"
+            if _scenario_active(profile.get("scenario_applied"))
+            else "historical"
+        ),
+    }
+
+
 def _bare_windows(rotation):
     fractions = bare_fraction_by_month(rotation)
     months = [
@@ -91,17 +161,111 @@ def _bare_windows(rotation):
     ]
 
 
-def _vulnerable_months(profile):
+def _vulnerable_months(profile, rotation, zone, calendars):
+    """Months where a crop is in a sensitive growth stage and a matching stress
+    signal is present, with reasons, crops and stages.
+
+    stress_by_month is keyed by indicator first ({"heat_days": {"7": 6.5}}),
+    so each indicator is looked up per month.
+    """
+    stress = profile["stress_by_month"]
+    sm_anomaly = profile.get("soil_moisture_anomaly_by_month") or {}
+
+    crops_by_month = {month: [] for month in range(1, 13)}
+
+    for index, crops_in_field in enumerate(field_occupancy(rotation)):
+        month = index % 12 + 1
+        for crop in crops_in_field:
+            if crop not in crops_by_month[month]:
+                crops_by_month[month].append(crop)
+
+    stages_by_month = {}
+
+    for window in sensitive_windows(rotation, zone, calendars):
+        stages_by_month.setdefault(window["month"], []).append({
+            "crop": window["crop"],
+            "stage": window["stage"],
+            "sensitive": window["sensitive"],
+        })
+
     vulnerable = []
 
-    for month, values in profile["stress_by_month"].items():
-        if (
-            (values.get("dry_spell_prob") or 0) >= VULNERABLE_DRY_SPELL_PROB
-            or (values.get("heat_days") or 0) >= VULNERABLE_HEAT_DAYS
-        ):
-            vulnerable.append(int(month))
+    for month in range(1, 13):
+        if not crops_by_month[month]:
+            continue
 
-    return sorted(vulnerable)
+        heat = _month_value(stress.get("heat_days"), month) or 0
+        dry = _month_value(stress.get("dry_spell_prob"), month) or 0
+        frost = _month_value(stress.get("frost_days"), month) or 0
+        anomaly = _month_value(sm_anomaly, month)
+
+        # Only count a stress when a crop is in a growth stage sensitive to it
+        # (same rule as engine.alerts), so hot climates are not flagged every month.
+        sensitive = {
+            tag
+            for stage in stages_by_month.get(month, [])
+            for tag in stage["sensitive"]
+        }
+
+        reasons = []
+
+        if heat >= VULNERABLE_HEAT_DAYS and "heat" in sensitive:
+            reasons.append("heat")
+        if dry >= VULNERABLE_DRY_SPELL_PROB and "drought" in sensitive:
+            reasons.append("dry_spell")
+        if frost >= VULNERABLE_FROST_DAYS and "frost" in sensitive:
+            reasons.append("frost")
+        if (
+            anomaly is not None
+            and anomaly <= VULNERABLE_SOIL_MOISTURE_ANOMALY
+            and "drought" in sensitive
+        ):
+            reasons.append("soil_drying")
+
+        if reasons:
+            vulnerable.append({
+                "month": month,
+                "crops": crops_by_month[month],
+                "sensitive_stages": stages_by_month.get(month, []),
+                "reasons": reasons,
+                "values": {
+                    "heat_days": heat,
+                    "dry_spell_prob": dry,
+                    "frost_days": frost,
+                    "soil_moisture_anomaly": anomaly,
+                },
+            })
+
+    return vulnerable
+
+
+def _confidence(profile, data_tier, scenario, featured):
+    """High / medium / low label (team plan, section 7)."""
+    n_years = profile["n_years"]
+    missing = profile["missing_fraction"] or 0
+    corr = ((profile.get("validation") or {}).get("prism") or {}).get("precip_corr")
+
+    if (
+        not featured
+        or missing > MAX_MISSING_FRACTION
+        or abs(scenario.get("temp_c", 0)) > SCENARIO_LOW_CONFIDENCE_TEMP_C
+        or abs(scenario.get("rain_pct", 0)) > SCENARIO_LOW_CONFIDENCE_RAIN_PCT
+    ):
+        return "low"
+
+    if (
+        data_tier == "us_enhanced"
+        and n_years >= CONFIDENCE_MIN_YEARS
+        and corr is not None
+        and corr > CONFIDENCE_MIN_PRISM_CORR
+    ):
+        return "high"
+
+    if n_years >= CONFIDENCE_MIN_YEARS:
+        return "medium"
+
+    return "low"
+
 
 @csrf_exempt
 def analyze(request):
@@ -207,10 +371,7 @@ def analyze(request):
         )
 
         # Build a separate scenario profile only when a change was requested.
-        scenario_active = (
-            scenario.get("rain_pct", 0) != 0
-            or scenario.get("temp_c", 0) != 0
-        )
+        scenario_active = _scenario_active(scenario)
 
         profile = baseline_profile
 
@@ -244,6 +405,8 @@ def analyze(request):
             crops=crops,
             calendars=calendars,
             templates=templates,
+            lang=lang,
+            data_tier=data_tier,
         )
 
         # Generate alerts for the farmer's current rotation.
@@ -297,11 +460,17 @@ def analyze(request):
                 "name": featured["name"] if featured else None,
                 "country": featured["country"] if featured else None,
                 "zone": zone,
+                "featured": bool(featured),
+                "slug": featured["slug"] if featured else None,
             },
             "data_quality": {
                 "status": (
                     "partial" if warnings else "complete"
                 ),
+                "confidence": _confidence(
+                    profile, data_tier, scenario, bool(featured)
+                ),
+                "fallback_used": bool(power_meta.get("fallback_used")),
                 "tier": data_tier,
                 "sources": sources,
                 "warnings": warnings,
@@ -312,19 +481,24 @@ def analyze(request):
                 "soil_cache": soil_meta,
             },
             "climate": {
-                "baseline": _climate_summary(baseline_profile),
-                "scenario": {
-                    "rain_pct": scenario.get("rain_pct", 0),
-                    "temp_c": scenario.get("temp_c", 0),
-                    **_climate_summary(profile),
-                },
+                "baseline": _climate_block(baseline_profile),
+                "scenario": (
+                    {
+                        "rain_pct": scenario.get("rain_pct", 0),
+                        "temp_c": scenario.get("temp_c", 0),
+                        **_climate_block(profile),
+                    }
+                    if scenario_active else None
+                ),
             },
             "soil": {
                 "measured": soil,
                 "farmer_texture_override": overrides.get("soil_texture"),
             },
             "bare_windows": _bare_windows(current_rotation),
-            "vulnerable_months": _vulnerable_months(profile),
+            "vulnerable_months": _vulnerable_months(
+                profile, current_rotation, zone, calendars
+            ),
             "alerts": alerts,
             "strategies": strategies,
             "disclaimer": (

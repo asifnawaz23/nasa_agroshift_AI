@@ -148,3 +148,37 @@ def test_input_profile_is_not_modified(strategy_inputs):
     build_strategies(**strategy_inputs)
 
     assert strategy_inputs["profile"] == original_profile
+
+
+EXPLANATION_PARTS = (
+    "why_suggested",
+    "evidence",
+    "benefits",
+    "info_gaps",
+    "local_review",
+)
+
+
+def test_each_strategy_has_the_five_explanation_parts(strategy_inputs):
+    strategies = build_strategies(**strategy_inputs)
+
+    for strategy in strategies:
+        for part in EXPLANATION_PARTS:
+            assert part in strategy, f"{strategy['key']} is missing {part}"
+
+        assert isinstance(strategy["why_suggested"], str)
+        assert strategy["why_suggested"].strip()
+        assert strategy["info_gaps"], "every strategy states its information gaps"
+        assert strategy["local_review"], "every strategy lists local review items"
+        assert strategy["rotation"]["steps"]
+
+    assert [s["is_current"] for s in strategies] == [True, False, False]
+
+
+def test_explanations_follow_requested_language(strategy_inputs):
+    english = build_strategies(**strategy_inputs, lang="en")
+    urdu = build_strategies(**strategy_inputs, lang="ur")
+
+    assert english[1]["why_suggested"] != urdu[1]["why_suggested"]
+    # Urdu text uses Arabic-script characters.
+    assert any("\u0600" <= ch <= "\u06ff" for ch in urdu[1]["why_suggested"])

@@ -1,7 +1,7 @@
 
 # FieldShift Planner — API Contract
 
-**Version:** 1.0  
+**Version:** 1.1 (2026-11-15: strategy explanation parts, monthly climate, vulnerable months, confidence)  
 **Status:** Initial Development  
 **Base URL (local):** `http://127.0.0.1:8000/api/`  
 **Content-Type:** `application/json`
@@ -330,6 +330,78 @@ The analysis response contains the following top-level fields:
 | `strategies` | array | Recommended crop rotation strategies |
 | `disclaimer` | string | Limitations of the analysis |
 
+A full real example (Central Iowa, What-If +3 °C and −30 % rain) is in `docs/mock_analyze.json`. It was generated from the live endpoint, so the frontend can build every screen against it.
+
+#### `location`
+
+| Field | Type | Description |
+|---|---|---|
+| `lat`, `lon` | number | The analyzed point |
+| `name`, `country` | string/null | Featured pin name and country, `null` for a clicked point |
+| `zone` | string | `temperate` or `subtropical` |
+| `featured` | boolean | `true` when the point is within 5 km of a featured pin |
+| `slug` | string/null | Featured pin slug |
+
+#### `data_quality`
+
+| Field | Type | Description |
+|---|---|---|
+| `confidence` | string | `high`, `medium` or `low` (show as a badge) |
+| `tier` | string | `standard`, `featured` or `us_enhanced` |
+| `fallback_used` | boolean | `true` when cached/offline climate data was used: show a "using cached data" notice |
+| `status` | string | `complete`, or `partial` when `warnings` is not empty |
+| `warnings` | array of string | Plain-language data warnings |
+| `sources` | array of string | Data sources actually used |
+| `years_covered`, `n_years`, `missing_fraction` | | Climate record length and gaps |
+
+Confidence is `low` for a clicked (non-featured) point, lots of missing data, or a What-If beyond ±3 °C / ±30 % rain. It is `high` only for the US-enhanced tier with PRISM validation above 0.85, otherwise `medium` with 15+ years of data.
+
+#### `climate`
+
+`climate.baseline` is always filled. `climate.scenario` is `null` when no What-If is applied; otherwise it has the same fields plus `rain_pct` and `temp_c`.
+
+| Field | Type | Description |
+|---|---|---|
+| `annual_rainfall_mm`, `average_temperature_c` | number | Annual summary |
+| `monthly` | array of 12 objects | One row per month, `month` 1 to 12 (chart data) |
+| `trends` | object | `precip_mm_per_decade`, `t_mean_c_per_decade` |
+| `year_stress_flags` | object | `{"2012": ["drought", "heat"]}` |
+| `frost_free_season` | object | `median_days`, `p10`, `p90` |
+| `soil_moisture_source` | string | `smap` or `power_root_wetness` |
+| `bare_months_observed` | array | Bare months seen in NDVI (empty without NDVI data) |
+| `basis` | string | `historical` for baseline, `simulated` for scenario: label charts with it |
+
+Each `monthly` row: `month`, `t_mean`, `t_max`, `t_min`, `precip_mm`, `et0_mm`, `deficit_mm`, `root_wetness`, `heat_days`, `severe_heat_days`, `frost_days`, `dry_spell_prob` (0 to 1), `extreme_rain_days`, `soil_moisture_anomaly` (standard deviations), `ndvi`. Any value can be `null` when data is missing.
+
+#### `bare_windows`
+
+`[{"month": 11, "bare_fraction": 1.0}]`: months when the current rotation leaves the field bare in at least half of the cycle years.
+
+#### `vulnerable_months`
+
+Months where a crop of the current rotation is in a growth stage sensitive to a stress that is present:
+
+```json
+{"month": 7, "crops": ["maize", "soybean"],
+ "sensitive_stages": [{"crop": "maize", "stage": "flowering", "sensitive": ["heat", "drought"]}],
+ "reasons": ["heat", "dry_spell", "soil_drying"],
+ "values": {"heat_days": 6.8, "dry_spell_prob": 0.55, "frost_days": 0, "soil_moisture_anomaly": -1.4}}
+```
+
+`reasons` can contain `heat`, `dry_spell`, `frost`, `soil_drying`.
+
+#### `alerts`
+
+```json
+{"type": "heat", "severity": "critical", "severity_label": "Critical", "month": 7,
+ "crops": ["maize", "soybean"], "stage": "flowering",
+ "triggered_by": [{"variable": "heat_days", "value": 6.8, "threshold": 35.0}],
+ "reason": "July: ...", "action": "Consider earlier sowing ...",
+ "basis": "simulated", "source": "NASA POWER"}
+```
+
+`type`: `heat`, `drought`, `water_deficit`, `frost`, `waterlogging`, `soil_drying`. `severity`: `low`, `moderate`, `high`, `critical`. `reason`, `action` and `severity_label` follow `lang`. `basis` is `historical` or `simulated`.
+
 ### 6.4 Strategy Structure
 
 The API returns three strategies:
@@ -347,8 +419,17 @@ Each strategy contains:
 | `key` | string | Strategy identifier |
 | `name` | string | Display name |
 | `description` | string | Strategy explanation |
+| `is_current` | boolean | `true` for the farmer's current rotation |
+| `rotation` | object | `cycle_years` and `steps` (crop slug, year, sow and harvest month) |
 | `scores` | object | Current or simulated strategy scores |
 | `baseline_scores` | object/null | Baseline scores for comparison |
+| `why_suggested` | string | Why this strategy is suggested |
+| `evidence` | array | NASA-data evidence: `{"text", "source", "type": "observed", "kind", "month", "crops"}` |
+| `benefits` | array of string | Expected benefits |
+| `info_gaps` | array of string | What the data cannot tell us |
+| `local_review` | array of string | What to check with a local expert or extension office |
+
+The last five fields are the challenge's required parts. They are written in the requested `lang` and every number in them comes from the analysis data (`engine/explain.py`).
 
 ### 6.5 Scoring Structure
 
