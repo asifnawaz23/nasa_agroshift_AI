@@ -17,6 +17,8 @@ GRID_STEP_DEG = 0.5              # cache grid (~55 km), matches POWER's coarse r
 # Daily stress indicators (plan section 7)
 # ---------------------------------------------------------------------------
 HEAT_DAY_TMAX_C = 35.0           # t2m_max above this = heat-stress day (common crop heat threshold)
+SEVERE_HEAT_DAY_TMAX_C = 40.0    # t2m_max above this = severe heat; matters in hot places (Sindh, Punjab)
+                                 # where >35 C is normal for 150+ days a year
 FROST_DAY_TMIN_C = 0.0           # t2m_min at or below this = frost day
 WET_DAY_MM = 1.0                 # a day with >= 1 mm counts as wet
 EXTREME_RAIN_PERCENTILE = 95     # percentile of wet-day rain at this location
