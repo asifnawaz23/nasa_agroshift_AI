@@ -32,6 +32,8 @@ except ImportError:  # running outside the backend folder
 from .errors import DataSourceError
 
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[1] / ".cache"
+# Soil varies over short distances and SoilGrids is 250 m, so soil gets a finer grid (~1 km)
+SOIL_GRID_STEP_DEG = 0.01
 
 
 # ---------------------------------------------------------------------------
@@ -42,8 +44,14 @@ def snap(value: float, step: float = GRID_STEP_DEG) -> float:
     return round(round(value / step) * step, 4) + 0.0
 
 
+def _decimals(step: float) -> int:
+    text = f"{step:.6f}".rstrip("0")
+    return max(1, len(text.split(".")[1]) if "." in text else 1)
+
+
 def grid_key(lat: float, lon: float, step: float = GRID_STEP_DEG) -> str:
-    return f"{snap(lat, step):.1f}_{snap(lon, step):.1f}"
+    d = _decimals(step)
+    return f"{snap(lat, step):.{d}f}_{snap(lon, step):.{d}f}"
 
 
 def grid_center(lat: float, lon: float, step: float = GRID_STEP_DEG):
@@ -120,10 +128,14 @@ def _age_hours(record):
     return (dt.datetime.now(dt.timezone.utc) - then).total_seconds() / 3600
 
 
-def get_or_fetch(kind, lat, lon, fetch_fn, *, backend=None, max_age_hours=None, source_url=""):
-    """Return (payload, meta). meta: cache_hit, fallback_used, grid_key, fetched_at."""
+def get_or_fetch(kind, lat, lon, fetch_fn, *, backend=None, max_age_hours=None, source_url="",
+                 step=GRID_STEP_DEG):
+    """Return (payload, meta). meta: cache_hit, fallback_used, grid_key, fetched_at.
+
+    step: grid size in degrees. Climate uses 0.5 (POWER is coarse); soil uses SOIL_GRID_STEP_DEG.
+    """
     backend = backend or get_backend()
-    key = grid_key(lat, lon)
+    key = grid_key(lat, lon, step)
     cached = backend.get(kind, key)
     age = _age_hours(cached) if cached else None
     fresh = cached is not None and (max_age_hours is None or (age is not None and age <= max_age_hours))
@@ -133,7 +145,7 @@ def get_or_fetch(kind, lat, lon, fetch_fn, *, backend=None, max_age_hours=None, 
         meta.update(cache_hit=True, fetched_at=cached.get("fetched_at"))
         return cached["payload"], meta
 
-    clat, clon = grid_center(lat, lon)
+    clat, clon = grid_center(lat, lon, step)
     try:
         payload = fetch_fn(clat, clon)
     except DataSourceError:
@@ -144,6 +156,24 @@ def get_or_fetch(kind, lat, lon, fetch_fn, *, backend=None, max_age_hours=None, 
     record = backend.set(kind, key, payload, source_url)
     meta["fetched_at"] = record.get("fetched_at")
     return payload, meta
+
+
+def get_soil(lat, lon, *, backend=None):
+    """SoilGrids summary for the grid cell, cached. Returns (dict | None, meta).
+
+    Never raises for service problems: returns None with meta["error"] so the API can fall back
+    (farmer override or a 'soil data unavailable' info gap). Soil does not change, so no max age.
+    """
+    from .soilgrids import fetch_soilgrids
+
+    try:
+        payload, meta = get_or_fetch("soilgrids", lat, lon, fetch_soilgrids, backend=backend,
+                                     source_url="https://soilgrids.org/", step=SOIL_GRID_STEP_DEG)
+        meta["error"] = None
+        return payload, meta
+    except DataSourceError as exc:
+        return None, {"grid_key": grid_key(lat, lon, SOIL_GRID_STEP_DEG), "cache_hit": False,
+                      "fallback_used": False, "fetched_at": None, "error": str(exc)}
 
 
 def get_power_daily(lat, lon, *, backend=None):
