@@ -87,6 +87,11 @@ ALERT_THRESHOLDS = {
 }
 SENSITIVE_STAGE_HEAT_WEIGHT = 2.0   # heat days count double in a crop's sensitive growth stage
 SEVERITY_ORDER = ["low", "moderate", "high", "critical"]
+HEAT_TOLERANT_MIN = 4       # crops with heat_tolerance >= this are judged on severe heat days (>40 C)
+FROST_HARDY_MIN = 4         # crops with frost_tolerance >= this get no frost alerts
+# Irrigation covers part of a water deficit: lower the deficit/dry-spell severity by this many levels
+WATER_AVAILABILITY_DOWNGRADE = {"rainfed": 0, "limited_irrigation": 1, "irrigated": 2}
+DEFAULT_WATER_AVAILABILITY = {"temperate": "rainfed", "subtropical": "irrigated"}
 
 # ---------------------------------------------------------------------------
 # Confidence label (plan section 7)

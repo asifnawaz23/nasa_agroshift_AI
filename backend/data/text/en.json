@@ -1,6 +1,25 @@
 {
   "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
   "list_and": "and",
+  "alerts": {
+    "severity": {"low": "Low", "moderate": "Moderate", "high": "High", "critical": "Critical"},
+    "reason": {
+      "heat": "{month}: {crop} at the {stage} stage, while this area averages {value} days above {threshold} °C.",
+      "drought": "In {value}% of past years, {month} had a dry spell of 10+ days ({crop}, {stage} stage).",
+      "water_deficit": "{month}: rain falls about {value} mm short of what the crops lose to evaporation ({crop}, {stage} stage).",
+      "frost": "{month}: about {value} frost days on average ({crop}, {stage} stage).",
+      "waterlogging": "{month}: about {value} heavy-rain days on average, and this soil drains slowly ({crop}, {stage} stage).",
+      "soil_drying": "{month}: soil moisture has been below normal in recent years, {value} standard deviations ({crop}, {stage} stage)."
+    },
+    "action": {
+      "heat": "Consider earlier sowing or a more heat-tolerant variety so the {stage} stage avoids {month}. Ask your extension office.",
+      "drought": "Keep crop residue or mulch on the soil to hold moisture, and plan a backup irrigation if you can.",
+      "water_deficit": "Plan about {value} mm of irrigation for {month}, or consider a crop that needs less water.",
+      "frost": "Shift the sowing date so the {stage} stage misses {month}, or choose a frost-tolerant variety.",
+      "waterlogging": "Use raised beds or drainage channels, and avoid sowing just before the heavy-rain season.",
+      "soil_drying": "Keep residue on the field and check soil moisture before deciding to irrigate."
+    }
+  },
   "why": {
     "current": "This is what is farmed here today. It is the baseline the other options are compared with.",
     "current_alt_rice_wheat": "This is a common rotation in central Punjab. It is the baseline the other options are compared with.",
