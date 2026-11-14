@@ -7,13 +7,14 @@ Public function:
     build_strategies(...) -> list[dict]
 """
 
+from .constraints import constraint_warnings
 from .explain import build_explanations
 from .knowledge import (
     load_calendars,
     load_crops,
     load_templates,
 )
-from .scoring import score_rotation
+from .scoring import score_contributions, score_rotation
 
 
 STRATEGY_NAMES = {
@@ -182,6 +183,15 @@ def build_strategies(
             calendars=calendars,
         )
 
+        breakdown = score_contributions(
+            scores, rotation, priorities, constraints, crops=crops
+        )
+        warnings = constraint_warnings(
+            rotation, profile, constraints, crops=crops, lang=lang
+        )
+        # Constraint clashes are risks that need local review (plan section 6).
+        explanations["local_review"] = warnings + explanations["local_review"]
+
         results.append({
             "key": strategy["key"],
             "name": strategy["name"],
@@ -190,6 +200,10 @@ def build_strategies(
             "rotation": rotation,
             "scores": scores,
             "baseline_scores": baseline_scores,
+            "contributions": breakdown["contributions"],
+            "weights": breakdown["weights"],
+            "equipment_penalty": breakdown["equipment_penalty"],
+            "constraint_warnings": warnings,
             **explanations,
         })
 

@@ -11,3 +11,4 @@ Folder name = pin slug in `backend/data/locations.json`. Loaded by `datasources.
 - `ndvi.csv` and `smap.csv` are made with `tools/appeears_to_prepulled.py` (quality filtering described in that file).
 - `power_cache.json` and `soil.json` are offline snapshots made with `tools/snapshot_power.py` on 2026-11-15 (NASA POWER daily 2006 to 2025, ISRIC SoilGrids top 30 cm). They are used only when the live services fail.
 - Raw AppEEARS CSVs are not committed (they are kept outside the repository).
+- Iowa's tier is `featured` until PRISM, CDL and SSURGO files are added; then set `"tier": "us_enhanced"` in `locations.json` (its `planned_tier`).

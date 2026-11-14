@@ -13,7 +13,7 @@
     "status": "complete",
     "confidence": "medium",
     "fallback_used": false,
-    "tier": "us_enhanced",
+    "tier": "featured",
     "sources": [
       "NASA POWER",
       "SoilGrids",
@@ -604,6 +604,22 @@
       "source": "ISRIC SoilGrids",
       "resolution_m": 250
     },
+    "used": {
+      "available": true,
+      "clay_pct": 38.1,
+      "sand_pct": 23.4,
+      "silt_pct": 38.5,
+      "soc_g_kg": 21.1,
+      "organic_matter_pct": 3.64,
+      "ph": 6.5,
+      "texture": "clay loam",
+      "texture_group": "fine",
+      "drainage_hint": "slow",
+      "erodibility_hint": "low",
+      "depth": "0-30cm",
+      "source": "ISRIC SoilGrids",
+      "resolution_m": 250
+    },
     "farmer_texture_override": null
   },
   "bare_windows": [
@@ -965,6 +981,24 @@
         "pest_break": 67.5,
         "income": 78.1
       },
+      "contributions": {
+        "water_fit": 6.9,
+        "climate_risk": 11.6,
+        "soil_health": 12.2,
+        "erosion_infiltration": 8.3,
+        "pest_break": 6.0,
+        "income": 10.4
+      },
+      "weights": {
+        "water_fit": 0.178,
+        "climate_risk": 0.2,
+        "soil_health": 0.222,
+        "erosion_infiltration": 0.178,
+        "pest_break": 0.089,
+        "income": 0.133
+      },
+      "equipment_penalty": 0.0,
+      "constraint_warnings": [],
       "why_suggested": "This is what is farmed here today. It is the baseline the other options are compared with.",
       "evidence": [
         {
@@ -1028,7 +1062,7 @@
         "Nitrogen-fixing crops (Soybean) take nitrogen from the air, so the next crop needs less fertilizer."
       ],
       "info_gaps": [
-        "Ground data (PRISM weather, SSURGO soil, CDL crop history) is used, but there is no soil test from this field.",
+        "Satellite soil moisture (SMAP, 9 km) and vegetation (MODIS NDVI, 250 m) describe the area, not your individual field.",
         "These results use a What-If scenario (+3 °C, -30% rain), not observed weather.",
         "Income values are rough regional placeholders, not local prices."
       ],
@@ -1089,6 +1123,24 @@
         "pest_break": 50.0,
         "income": 59.4
       },
+      "contributions": {
+        "water_fit": 8.8,
+        "climate_risk": 14.6,
+        "soil_health": 13.2,
+        "erosion_infiltration": 13.0,
+        "pest_break": 4.4,
+        "income": 7.9
+      },
+      "weights": {
+        "water_fit": 0.178,
+        "climate_risk": 0.2,
+        "soil_health": 0.222,
+        "erosion_infiltration": 0.178,
+        "pest_break": 0.089,
+        "income": 0.133
+      },
+      "equipment_penalty": 0.0,
+      "constraint_warnings": [],
       "why_suggested": "Suggested to lower the farm's water demand: it uses crops that need less water or handle drought better. The field is bare about 3 fewer months per year.",
       "evidence": [
         {
@@ -1151,7 +1203,7 @@
         "Fodder crops (Sorghum) can feed animals or bring extra income."
       ],
       "info_gaps": [
-        "Ground data (PRISM weather, SSURGO soil, CDL crop history) is used, but there is no soil test from this field.",
+        "Satellite soil moisture (SMAP, 9 km) and vegetation (MODIS NDVI, 250 m) describe the area, not your individual field.",
         "These results use a What-If scenario (+3 °C, -30% rain), not observed weather.",
         "Income values are rough regional placeholders, not local prices."
       ],
@@ -1221,6 +1273,26 @@
         "pest_break": 60.5,
         "income": 51.2
       },
+      "contributions": {
+        "water_fit": 6.2,
+        "climate_risk": 12.3,
+        "soil_health": 13.4,
+        "erosion_infiltration": 12.1,
+        "pest_break": 5.4,
+        "income": 6.8
+      },
+      "weights": {
+        "water_fit": 0.178,
+        "climate_risk": 0.2,
+        "soil_health": 0.222,
+        "erosion_infiltration": 0.178,
+        "pest_break": 0.089,
+        "income": 0.133
+      },
+      "equipment_penalty": 0.0,
+      "constraint_warnings": [
+        "Water: this rotation needs about 783 mm of water a year, but rain here averages about 602 mm. Without irrigation, expect water stress in dry months."
+      ],
       "why_suggested": "Suggested to rebuild the soil: it adds nitrogen-fixing legumes, more ground cover and more crop families. It needs about 31% more water per year than your current rotation (783 mm instead of 600 mm). The field is bare about 2 fewer months per year.",
       "evidence": [
         {
@@ -1285,11 +1357,12 @@
         "Fodder crops (Oats and Red clover) can feed animals or bring extra income."
       ],
       "info_gaps": [
-        "Ground data (PRISM weather, SSURGO soil, CDL crop history) is used, but there is no soil test from this field.",
+        "Satellite soil moisture (SMAP, 9 km) and vegetation (MODIS NDVI, 250 m) describe the area, not your individual field.",
         "These results use a What-If scenario (+3 °C, -30% rain), not observed weather.",
         "Income values are rough regional placeholders, not local prices."
       ],
       "local_review": [
+        "Water: this rotation needs about 783 mm of water a year, but rain here averages about 602 mm. Without irrigation, expect water stress in dry months.",
         "Get a soil test (nutrients, organic matter, salinity) before changing the rotation.",
         "Check that there are buyers or a use for Cereal rye (cover crop), Oats and Red clover near you.",
         "Ask about local pest and disease history for the new crops (Cereal rye (cover crop), Oats and Red clover).",

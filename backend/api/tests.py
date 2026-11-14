@@ -304,3 +304,40 @@ class HealthTests(TestCase):
         res = self.client.get("/api/health/")
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()["database"], "ok")
+
+
+@patch("api.views.get_soil", lambda lat, lon: ({"available": True, "texture": "silt loam",
+                                               "texture_group": "medium", "drainage_hint": "moderate",
+                                               "erodibility_hint": "high", "organic_matter_pct": 3.0,
+                                               "source": "ISRIC SoilGrids"}, {"cache_hit": True}))
+@patch("api.views.get_power_daily", _sample_daily)
+class SoilOverrideTests(TestCase):
+    def analyze(self, **changes):
+        body = {**ANALYZE_BODY, **changes}
+        return self.client.post("/api/analyze/", json.dumps(body), content_type="application/json")
+
+    def test_farmer_texture_replaces_soilgrids(self):
+        data = self.analyze(overrides={"soil_texture": "clay"}).json()
+        used, measured = data["soil"]["used"], data["soil"]["measured"]
+        self.assertEqual(used["texture"], "clay")
+        self.assertEqual(used["drainage_hint"], "slow")
+        self.assertEqual(used["texture_source"], "farmer")
+        self.assertEqual(used["organic_matter_pct"], 3.0, "SoilGrids values are kept")
+        self.assertEqual(measured["texture"], "silt loam")
+
+    def test_override_changes_the_erosion_score(self):
+        silty = self.analyze().json()["strategies"][0]["scores"]["erosion_infiltration"]
+        clay = self.analyze(overrides={"soil_texture": "clay"}).json()["strategies"][0]["scores"]["erosion_infiltration"]
+        self.assertNotEqual(silty, clay)
+
+    def test_unknown_texture_is_rejected(self):
+        self.assertEqual(self.analyze(overrides={"soil_texture": "mud"}).status_code, 400)
+
+
+class PinAlertTests(TestCase):
+    def test_each_pin_has_an_alert_level(self):
+        pins = self.client.get("/api/locations/").json()["results"]
+        for pin in pins:
+            summary = pin["alert_summary"]
+            self.assertIsNotNone(summary, pin["slug"])
+            self.assertIn(summary["worst"], ("low", "moderate", "high", "critical"))

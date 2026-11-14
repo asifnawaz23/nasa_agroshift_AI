@@ -87,38 +87,38 @@ Each location should contain:
 | `tier` | string | Available data tier |
 | `featured` | boolean | Whether the location is featured |
 
-**Example response:**
+**Example response** (the 3 real pins come from `backend/data/locations.json`):
 
 ```json
 {
   "status": "success",
-  "count": 2,
+  "count": 3,
   "results": [
     {
       "slug": "iowa-central",
-      "name": "Central Iowa",
-      "lat": 42.0,
-      "lon": -93.6,
+      "name": "Central Iowa (near Ames)",
+      "name_ur": "وسطی آئیووا (ایمز کے قریب)",
+      "lat": 42.1,
+      "lon": -93.45,
       "country": "United States",
       "zone": "Temperate",
+      "zone_key": "temperate",
       "tier": "featured",
-      "featured": true
-    },
-    {
-      "slug": "example-location",
-      "name": "Example Farming Region",
-      "lat": 31.5,
-      "lon": 74.3,
-      "country": "Pakistan",
-      "zone": "Subtropical",
-      "tier": "standard",
-      "featured": false
+      "featured": true,
+      "status": "confirmed",
+      "alert_summary": {
+        "worst": "critical",
+        "counts": {"low": 0, "moderate": 2, "high": 3, "critical": 1},
+        "by_month": {"7": "critical", "8": "high"}
+      }
     }
   ]
 }
 ```
 
-The example locations are illustrative and must not be treated as confirmed database records.
+- `alert_summary.worst` sets the pin colour (low / moderate / high / critical) for the default rotation, from 20 years of history (not a forecast). It is `null` if a pin has no offline data.
+- `status` is `confirmed` or `provisional` (Sindh: no cropland point confirmed yet).
+
 
 ---
 
@@ -373,6 +373,10 @@ Confidence is `low` for a clicked (non-featured) point, lots of missing data, or
 
 Each `monthly` row: `month`, `t_mean`, `t_max`, `t_min`, `precip_mm`, `et0_mm`, `deficit_mm`, `root_wetness`, `heat_days`, `severe_heat_days`, `frost_days`, `dry_spell_prob` (0 to 1), `extreme_rain_days`, `soil_moisture_anomaly` (standard deviations), `ndvi`. Any value can be `null` when data is missing.
 
+#### `soil`
+
+`{"measured": {...SoilGrids...}, "used": {...}, "farmer_texture_override": "clay" | null}`. `used` is what the analysis ran with: SoilGrids, or the farmer's texture (`overrides.soil_texture`, one of the 12 USDA classes such as `clay loam`) with `texture_source: "farmer"`, SoilGrids organic matter and pH kept. A different texture changes drainage and erodibility, so waterlogging alerts and the erosion score change. `null` when no soil data is available.
+
 #### `bare_windows`
 
 `[{"month": 11, "bare_fraction": 1.0}]`: months when the current rotation leaves the field bare in at least half of the cycle years.
@@ -428,6 +432,10 @@ Each strategy contains:
 | `benefits` | array of string | Expected benefits |
 | `info_gaps` | array of string | What the data cannot tell us |
 | `local_review` | array of string | What to check with a local expert or extension office |
+| `contributions` | object | Overall points each sub-score adds, e.g. `{"water_fit": 11.6, "soil_health": 12.0, ...}`. They sum, minus `equipment_penalty`, to `scores.overall` (show as a stacked bar) |
+| `weights` | object | Share of the overall score each sub-score gets from the priority sliders (sums to 1) |
+| `equipment_penalty` | number | Points taken off for crops needing equipment the farmer lacks |
+| `constraint_warnings` | array of string | Clashes with the farmer's water, equipment or market constraints. Also listed first in `local_review` |
 
 The last five fields are the challenge's required parts. They are written in the requested `lang` and every number in them comes from the analysis data (`engine/explain.py`).
 

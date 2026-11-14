@@ -1,6 +1,7 @@
 
 import json
 import uuid
+from functools import lru_cache
 
 from django.db import DatabaseError, connection
 from django.http import JsonResponse
@@ -12,8 +13,9 @@ from .serializers import AnalyzeRequestSerializer
 from datasources.cache import get_power_daily, get_soil
 from datasources.errors import DataSourceError
 from datasources.prepulled import find_featured, load_locations, load_prepulled
+from datasources.soilgrids import apply_texture_override
 
-from engine.alerts import build_alerts
+from engine.alerts import build_alerts, summarize_alerts
 from engine.climate_profile import build_climate_profile
 from engine.constants import (
     CONFIDENCE_HIGH_MIN_CORR,
@@ -361,6 +363,10 @@ def analyze(request):
                 "fetched_at": None,
             }
 
+        # The farmer's own soil texture wins over the 250 m SoilGrids estimate.
+        measured_soil = soil
+        soil = apply_texture_override(soil, overrides.get("soil_texture"))
+
         smap = prepulled.get("smap")
         ndvi = prepulled.get("ndvi")
         prism = prepulled.get("prism")
@@ -502,7 +508,8 @@ def analyze(request):
                 ),
             },
             "soil": {
-                "measured": soil,
+                "measured": measured_soil,
+                "used": soil,
                 "farmer_texture_override": overrides.get("soil_texture"),
             },
             "bare_windows": _bare_windows(current_rotation),
@@ -530,6 +537,29 @@ def analyze(request):
             {"data_source": [str(exc)]},
             status=503,
         )
+
+
+@lru_cache(maxsize=16)
+def _pin_alert_summary(slug, lat, zone):
+    """Worst historical alert for a pin's default rotation, for the map pin colour.
+
+    Uses the pin's offline POWER and soil snapshot, so it is fast and works without internet.
+    Cached per process (snapshots only change on deploy). None when the pin has no snapshot.
+    """
+    try:
+        prepulled = load_prepulled(slug)
+        if prepulled.get("power") is None:
+            return None
+        profile = build_climate_profile(
+            prepulled["power"], lat, smap=prepulled.get("smap"), ndvi=prepulled.get("ndvi"),
+            prism=prepulled.get("prism"), zone=zone,
+        )
+        rotation = load_templates()[zone]["current_default"]["rotation"]
+        alerts = build_alerts(profile=profile, rotation=rotation, zone=zone,
+                              soil=prepulled.get("soil"))
+        return summarize_alerts(alerts)
+    except (KeyError, ValueError, OSError):
+        return None
 
 
 def locations(request):
@@ -562,6 +592,13 @@ def locations(request):
             ),
             "tier": location["tier"],
             "featured": location["featured"],
+            "zone_key": location["zone"],
+            "name_ur": location.get("name_ur"),
+            "status": location.get("status"),
+            # Pin colour: worst historical alert for the default rotation (not a forecast).
+            "alert_summary": _pin_alert_summary(
+                location["slug"], location["lat"], location["zone"]
+            ),
         })
 
     return JsonResponse({

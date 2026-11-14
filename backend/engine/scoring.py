@@ -437,6 +437,43 @@ def _equipment_penalty(rotation, crops, constraints):
     ) * penalty_per_crop
 
 
+def priority_weights(priorities):
+    """Weight of each sub-score from the farmer's priority sliders (1 to 5).
+
+    Climate risk follows both water and soil priorities.
+    """
+    priorities = priorities or {}
+    water = _clamp(priorities.get("water", 3), 1, 5)
+    soil = _clamp(priorities.get("soil", 3), 1, 5)
+    return {
+        "water_fit": water,
+        "climate_risk": (water + soil) / 2,
+        "soil_health": soil,
+        "erosion_infiltration": _clamp(priorities.get("erosion", 3), 1, 5),
+        "pest_break": _clamp(priorities.get("pest", 3), 1, 5),
+        "income": _clamp(priorities.get("income", 3), 1, 5),
+    }
+
+
+def score_contributions(scores, rotation, priorities, constraints, crops=None):
+    """How many overall points each sub-score adds, and the equipment penalty.
+
+    contributions sum, minus equipment_penalty, to the overall score (before rounding and
+    the 0-100 clamp). Plan section 8: "the response includes each sub-score's weighted
+    contribution".
+    """
+    crops = crops or load_crops()
+    weights = priority_weights(priorities)
+    total = sum(weights.values())
+    return {
+        "contributions": {
+            key: round(scores[key] * weights[key] / total, 1) for key in weights
+        },
+        "weights": {key: round(weights[key] / total, 3) for key in weights},
+        "equipment_penalty": round(_equipment_penalty(rotation, crops, constraints or {}), 1),
+    }
+
+
 def score_rotation(
     rotation,
     profile,
@@ -474,28 +511,7 @@ def score_rotation(
         "income": _income(rotation, crops, constraints),
     }
 
-    water_priority = _clamp(
-        priorities.get("water", 3), 1, 5
-    )
-    soil_priority = _clamp(
-        priorities.get("soil", 3), 1, 5
-    )
-
-    weights = {
-        "water_fit": water_priority,
-        "climate_risk": (water_priority + soil_priority) / 2,
-        "soil_health": soil_priority,
-        "erosion_infiltration": _clamp(
-            priorities.get("erosion", 3), 1, 5
-        ),
-        "pest_break": _clamp(
-            priorities.get("pest", 3), 1, 5
-        ),
-        "income": _clamp(
-            priorities.get("income", 3), 1, 5
-        ),
-    }
-
+    weights = priority_weights(priorities)
     total_weight = sum(weights.values())
 
     overall = sum(
