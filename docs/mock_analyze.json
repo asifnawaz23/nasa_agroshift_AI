@@ -1,0 +1,123 @@
+
+{
+  "analysis_id": "mock-analysis-001",
+  "location": {
+    "lat": 42.0,
+    "lon": -93.6,
+    "name": "Central Iowa",
+    "country": "United States",
+    "zone": "Temperate"
+  },
+  "data_quality": {
+    "status": "mock",
+    "tier": "featured",
+    "sources": [
+      "NASA POWER",
+      "SoilGrids",
+      "SMAP",
+      "MODIS NDVI"
+    ],
+    "warnings": [
+      "This is illustrative mock data for frontend development."
+    ]
+  },
+  "climate": {
+    "baseline": {
+      "annual_rainfall_mm": 850,
+      "average_temperature_c": 10.5
+    },
+    "scenario": {
+      "rain_pct": 0,
+      "temp_c": 0,
+      "annual_rainfall_mm": 850,
+      "average_temperature_c": 10.5
+    }
+  },
+  "soil": {
+    "texture": "Loam",
+    "organic_carbon": null,
+    "ph": null
+  },
+  "bare_windows": [
+    {
+      "start_month": 10,
+      "end_month": 3,
+      "risk": "moderate"
+    }
+  ],
+  "vulnerable_months": [
+    7,
+    8
+  ],
+  "alerts": [
+    {
+      "severity": "info",
+      "title": "Illustrative analysis",
+      "message": "This response contains mock data and does not represent actual field measurements."
+    }
+  ],
+  "strategies": [
+    {
+      "key": "current",
+      "name": "Current Rotation",
+      "description": "Represents the existing crop rotation.",
+      "scores": {
+        "overall": 62,
+        "water_fit": 60,
+        "climate_risk": 58,
+        "soil_health": 65,
+        "erosion_infiltration": 64,
+        "pest_break": 60,
+        "income": 55
+      },
+      "baseline_scores": null
+    },
+    {
+      "key": "water_saver",
+      "name": "Water Saver",
+      "description": "Emphasizes water conservation and drought resilience.",
+      "scores": {
+        "overall": 78,
+        "water_fit": 88,
+        "climate_risk": 76,
+        "soil_health": 72,
+        "erosion_infiltration": 75,
+        "pest_break": 70,
+        "income": 60
+      },
+      "baseline_scores": {
+        "overall": 62,
+        "water_fit": 60,
+        "climate_risk": 58,
+        "soil_health": 65,
+        "erosion_infiltration": 64,
+        "pest_break": 60,
+        "income": 55
+      }
+    },
+    {
+      "key": "soil_builder",
+      "name": "Soil Builder",
+      "description": "Emphasizes soil health, ground cover and erosion protection.",
+      "scores": {
+        "overall": 82,
+        "water_fit": 75,
+        "climate_risk": 78,
+        "soil_health": 90,
+        "erosion_infiltration": 88,
+        "pest_break": 82,
+        "income": 58
+      },
+      "baseline_scores": {
+        "overall": 62,
+        "water_fit": 60,
+        "climate_risk": 58,
+        "soil_health": 65,
+        "erosion_infiltration": 64,
+        "pest_break": 60,
+        "income": 55
+      }
+    }
+  ],
+  "disclaimer": "This is illustrative mock data for frontend development. Scores and values are not real measurements or agricultural recommendations."
+}
