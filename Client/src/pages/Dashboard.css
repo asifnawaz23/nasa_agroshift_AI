@@ -1,0 +1,148 @@
+/* ===== Dashboard extras (Tailwind does the rest) ===== */
+
+/* Sidebar: deep space fading into farmland */
+.dash-sidebar {
+  background:
+    radial-gradient(400px 300px at 0% 100%, rgba(47, 143, 58, 0.35), transparent 70%),
+    radial-gradient(300px 260px at 100% 0%, rgba(79, 163, 255, 0.18), transparent 70%),
+    linear-gradient(180deg, #050b1f 0%, #061626 55%, #062014 100%);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.06), 12px 0 40px -20px rgba(0, 0, 0, 0.5);
+}
+/* subtle stars */
+.dash-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 20% 12%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1px 1px at 70% 8%,  rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1.5px 1.5px at 85% 30%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1px 1px at 35% 40%, rgba(255,255,255,.4), transparent 60%),
+    radial-gradient(1px 1px at 60% 55%, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(1px 1px at 15% 70%, rgba(255,255,255,.3), transparent 60%);
+}
+.dash-sidebar > *:not(.absolute) { position: relative; }
+
+.dash-gradient-text {
+  background: linear-gradient(90deg, #f6b23c, #ffe39a 45%, #5fbf4a);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+}
+
+/* Pulsing status dot */
+.dash-ping { animation: dashPing 1.8s ease-out infinite; }
+@keyframes dashPing {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+  100% { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0); }
+}
+
+/* ---------- Hero banner ---------- */
+.dash-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(600px 300px at 85% 120%, rgba(47, 143, 58, 0.55), transparent 65%),
+    radial-gradient(500px 280px at 90% -20%, rgba(79, 163, 255, 0.35), transparent 65%),
+    linear-gradient(120deg, #050b1f 0%, #0a1d3a 55%, #0b2a1c 100%);
+}
+.dash-hero::before { /* stars */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 55% 15%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 62% 80%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1px 1px at 45% 45%, rgba(255,255,255,.4), transparent 60%);
+  opacity: .8;
+}
+
+/* Mini rotating globe */
+.dash-globe {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  width: 260px;
+  height: 260px;
+  translate: 0 -50%;
+  border-radius: 50%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,.4), transparent 30%),
+    radial-gradient(circle at 50% 50%, #2479de 0%, #0d3f86 55%, #061a3a 100%);
+  box-shadow: 0 0 60px 8px rgba(79, 163, 255, .35), inset -40px -30px 70px rgba(0,0,0,.75);
+}
+.dash-globe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 200%;
+  background:
+    radial-gradient(50px 34px at 12% 38%, #46a64f 60%, transparent 62%),
+    radial-gradient(70px 46px at 26% 64%, #2f8f3a 60%, transparent 62%),
+    radial-gradient(40px 56px at 40% 30%, #58b55e 60%, transparent 62%),
+    radial-gradient(64px 38px at 62% 56%, #46a64f 60%, transparent 62%),
+    radial-gradient(44px 30px at 78% 34%, #2f8f3a 60%, transparent 62%),
+    radial-gradient(56px 50px at 90% 68%, #58b55e 60%, transparent 62%);
+  filter: blur(2.5px);
+  opacity: .85;
+  animation: dashSpin 30s linear infinite;
+}
+.dash-globe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-linear-gradient(0deg, transparent 0 24px, rgba(150,210,255,.15) 24px 25px);
+}
+@keyframes dashSpin { to { transform: translateX(-50%); } }
+
+.dash-orbit {
+  position: absolute;
+  right: -90px;
+  top: 50%;
+  width: 360px;
+  height: 360px;
+  translate: 0 -50%;
+  border-radius: 50%;
+  border: 1px dashed rgba(150, 210, 255, .35);
+  transform: rotateX(70deg) rotateZ(-15deg);
+  animation: dashOrbit 16s linear infinite;
+}
+.dash-orbit::after { /* satellite */
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 12px 3px rgba(255, 255, 255, .8), -10px 0 0 -2px #2b6fd6, 10px 0 0 -2px #2b6fd6;
+}
+@keyframes dashOrbit {
+  from { transform: rotateX(70deg) rotateZ(0deg); }
+  to   { transform: rotateX(70deg) rotateZ(360deg); }
+}
+
+/* Cards lift on hover */
+.dash-card { transition: transform .2s ease, box-shadow .2s ease; }
+.dash-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -12px rgba(15, 23, 42, .18); }
+
+/* Entrance */
+.dash-rise { animation: dashRise .6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes dashRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 640px) {
+  .dash-globe { width: 160px; height: 160px; right: -50px; opacity: .55; }
+  .dash-orbit { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-ping, .dash-globe::before, .dash-orbit, .dash-rise { animation: none !important; }
+  .dash-card, .dash-card:hover { transition: none; transform: none; }
+}
