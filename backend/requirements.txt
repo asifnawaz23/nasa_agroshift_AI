@@ -1,0 +1,5 @@
+# Data + engine (Aman, Asif). Shayan: add Django, DRF, gunicorn, etc. below.
+requests>=2.32
+pandas>=2.2
+numpy>=2.0
+pytest>=8.0

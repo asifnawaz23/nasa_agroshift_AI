@@ -10,6 +10,10 @@ venv/
 .env.*
 !.env.example
 
+# Local data cache (snapshots for the demo go in backend/data/prepulled/ instead)
+backend/.cache/
+.pytest_cache/
+
 # Django
 backend/staticfiles/
 *.sqlite3
