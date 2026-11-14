@@ -6,6 +6,9 @@ from datasources.prepulled import load_locations
 
 from django.http import JsonResponse
 from django.utils import timezone
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt   # NEW
 
 from .serializers import AnalyzeRequestSerializer
 
@@ -100,7 +103,7 @@ def _vulnerable_months(profile):
 
     return sorted(vulnerable)
 
-
+@csrf_exempt
 def analyze(request):
     if request.method != "POST":
         return _error_response("Method not allowed.", status=405)
@@ -424,7 +427,7 @@ def crops(request):
         "results": results,
     })
 
-
+@csrf_exempt
 def explain(request):
     if request.method != "POST":
         return _error_response("Method not allowed.", status=405)
@@ -512,7 +515,7 @@ def explain(request):
         "ai_generated": False,
     })
 
-
+@csrf_exempt
 def chat(request):
     if request.method != "POST":
         return _error_response("Method not allowed.", status=405)
