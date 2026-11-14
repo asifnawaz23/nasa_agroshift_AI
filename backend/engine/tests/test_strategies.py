@@ -148,3 +148,72 @@ def test_input_profile_is_not_modified(strategy_inputs):
     build_strategies(**strategy_inputs)
 
     assert strategy_inputs["profile"] == original_profile
+
+
+EXPLANATION_PARTS = (
+    "why_suggested",
+    "evidence",
+    "benefits",
+    "info_gaps",
+    "local_review",
+)
+
+
+def test_each_strategy_has_the_five_explanation_parts(strategy_inputs):
+    strategies = build_strategies(**strategy_inputs)
+
+    for strategy in strategies:
+        for part in EXPLANATION_PARTS:
+            assert part in strategy, f"{strategy['key']} is missing {part}"
+
+        assert isinstance(strategy["why_suggested"], str)
+        assert strategy["why_suggested"].strip()
+        assert strategy["info_gaps"], "every strategy states its information gaps"
+        assert strategy["local_review"], "every strategy lists local review items"
+        assert strategy["rotation"]["steps"]
+
+    assert [s["is_current"] for s in strategies] == [True, False, False]
+
+
+def test_explanations_follow_requested_language(strategy_inputs):
+    english = build_strategies(**strategy_inputs, lang="en")
+    urdu = build_strategies(**strategy_inputs, lang="ur")
+
+    assert english[1]["why_suggested"] != urdu[1]["why_suggested"]
+    # Urdu text uses Arabic-script characters.
+    assert any("\u0600" <= ch <= "\u06ff" for ch in urdu[1]["why_suggested"])
+
+
+def test_contributions_add_up_to_the_overall_score(strategy_inputs):
+    for strategy in build_strategies(**strategy_inputs):
+        total = sum(strategy["contributions"].values()) - strategy["equipment_penalty"]
+        assert abs(total - strategy["scores"]["overall"]) <= 0.5, strategy["key"]
+        assert abs(sum(strategy["weights"].values()) - 1) < 0.01
+
+
+def test_higher_priority_raises_that_contribution(strategy_inputs):
+    low = build_strategies(**strategy_inputs)[0]["contributions"]["water_fit"]
+    strategy_inputs["priorities"] = {**strategy_inputs["priorities"], "water": 5}
+    high = build_strategies(**strategy_inputs)[0]["contributions"]["water_fit"]
+    assert high > low
+
+
+def test_constraint_clashes_become_local_review_warnings(strategy_inputs):
+    strategy_inputs["constraints"] = {
+        "water_availability": "rainfed", "equipment": "basic", "market_pref": "forage",
+    }
+    strategy_inputs["current_rotation"] = {"cycle_years": 1, "steps": [
+        {"year": 1, "crop": "maize", "sow_month": 5, "harvest_month": 10},
+        {"year": 1, "crop": "alfalfa", "sow_month": 4, "harvest_month": 10, "companion": True},
+    ]}
+    current = build_strategies(**strategy_inputs)[0]
+    assert any("equipment" in w.lower() for w in current["constraint_warnings"])
+    assert current["constraint_warnings"][0] == current["local_review"][0]
+
+
+def test_no_warnings_when_constraints_fit(strategy_inputs):
+    strategy_inputs["constraints"] = {
+        "water_availability": "irrigated", "equipment": "specialized", "market_pref": "balanced",
+    }
+    for strategy in build_strategies(**strategy_inputs):
+        assert strategy["constraint_warnings"] == []

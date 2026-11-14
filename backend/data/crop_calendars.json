@@ -95,7 +95,7 @@
        {"stage": "flowering", "start": 3, "end": 4, "sensitive": ["frost", "heat"]},
        {"stage": "pod_fill", "start": 4, "end": 5, "sensitive": ["heat", "drought"]}]},
 
-    {"crop": "mungbean", "zone": "subtropical", "season_label": "spring_summer", "sow_months": [3, 4], "harvest_months": [6], "typical_sow_month": 4, "typical_harvest_month": 6,
+    {"crop": "mungbean", "zone": "subtropical", "season_label": "spring_or_kharif", "sow_months": [3, 4, 7], "harvest_months": [6, 9, 10], "typical_sow_month": 4, "typical_harvest_month": 6,
      "growth_stages": [
        {"stage": "establishment", "start": 0, "end": 1},
        {"stage": "flowering_pod_fill", "start": 1, "end": 2, "sensitive": ["heat", "drought"]}]},

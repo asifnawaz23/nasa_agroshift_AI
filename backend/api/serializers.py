@@ -1,6 +1,8 @@
 
 from rest_framework import serializers
 
+from datasources.soilgrids import TEXTURE_CLASSES
+
 
 class RotationStepSerializer(serializers.Serializer):
     year = serializers.IntegerField(min_value=1)
@@ -47,8 +49,9 @@ class ConstraintsSerializer(serializers.Serializer):
 
 
 class OverridesSerializer(serializers.Serializer):
-    soil_texture = serializers.CharField(
-        max_length=80,
+    # USDA texture class from the farmer (e.g. "clay loam"); replaces the SoilGrids texture.
+    soil_texture = serializers.ChoiceField(
+        choices=TEXTURE_CLASSES,
         allow_null=True,
         required=False,
     )

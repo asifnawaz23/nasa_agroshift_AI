@@ -114,6 +114,7 @@ class RotationTemplate(models.Model):
         CURRENT_DEFAULT = "current_default", "Current Default"
         WATER_SAVER = "water_saver", "Water Saver"
         SOIL_BUILDER = "soil_builder", "Soil Builder"
+        CURRENT_ALT_RICE_WHEAT = "current_alt_rice_wheat", "Current (rice-wheat alternative)"
 
     zone = models.CharField(
         max_length=20,
@@ -121,7 +122,7 @@ class RotationTemplate(models.Model):
     )
 
     key = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=TemplateKey.choices,
     )
 

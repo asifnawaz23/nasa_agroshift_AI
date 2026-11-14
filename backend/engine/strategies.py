@@ -7,12 +7,14 @@ Public function:
     build_strategies(...) -> list[dict]
 """
 
+from .constraints import constraint_warnings
+from .explain import build_explanations
 from .knowledge import (
     load_calendars,
     load_crops,
     load_templates,
 )
-from .scoring import score_rotation
+from .scoring import score_contributions, score_rotation
 
 
 STRATEGY_NAMES = {
@@ -53,6 +55,8 @@ def build_strategies(
     crops=None,
     calendars=None,
     templates=None,
+    lang="en",
+    data_tier=None,
 ):
     """Build current, water-saver and soil-builder strategies.
 
@@ -67,6 +71,10 @@ def build_strategies(
 
     baseline_profile is required when the supplied profile contains
     an active climate scenario.
+
+    Each strategy also carries the five required explanation parts
+    (why_suggested, evidence, benefits, info_gaps, local_review) from
+    engine.explain, written in `lang` ("en" or "ur").
     """
     crops = crops or load_crops()
     calendars = calendars or load_calendars()
@@ -162,12 +170,41 @@ def build_strategies(
         else:
             baseline_scores = None
 
+        explanations = build_explanations(
+            strategy["key"],
+            rotation,
+            zone,
+            profile,
+            soil=soil,
+            tier=data_tier,
+            lang=lang,
+            current_rotation=current_rotation,
+            crops=crops,
+            calendars=calendars,
+        )
+
+        breakdown = score_contributions(
+            scores, rotation, priorities, constraints, crops=crops
+        )
+        warnings = constraint_warnings(
+            rotation, profile, constraints, crops=crops, lang=lang
+        )
+        # Constraint clashes are risks that need local review (plan section 6).
+        explanations["local_review"] = warnings + explanations["local_review"]
+
         results.append({
             "key": strategy["key"],
             "name": strategy["name"],
             "description": strategy["description"],
+            "is_current": strategy["key"] == "current",
+            "rotation": rotation,
             "scores": scores,
             "baseline_scores": baseline_scores,
+            "contributions": breakdown["contributions"],
+            "weights": breakdown["weights"],
+            "equipment_penalty": breakdown["equipment_penalty"],
+            "constraint_warnings": warnings,
+            **explanations,
         })
 
     return results

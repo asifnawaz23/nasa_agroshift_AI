@@ -54,7 +54,8 @@ class LocationCache(models.Model):
     grid_key = models.CharField(max_length=64)
     payload = models.JSONField()
     source_url = models.TextField(blank=True)
-    fetched_at = models.DateTimeField(auto_now_add=True)
+    # auto_now: refreshed on every save, so a re-fetched cache row shows its real age.
+    fetched_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ("kind", "grid_key")

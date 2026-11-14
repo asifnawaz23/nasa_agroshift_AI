@@ -137,3 +137,17 @@ def test_prism_validation_perfect_match(iowa):
     v = p["validation"]["prism"]
     assert v["precip_corr"] == 1.0 and v["precip_bias_pct"] == 0.0 and v["tmean_bias_c"] == 0.0
     assert p["data_tier"] == "us_enhanced" and p0["validation"] is None
+
+
+def test_trend_significance_flags():
+    import numpy as np
+    from engine.climate_profile import _trend_is_significant
+
+    years = np.arange(2006, 2026, dtype=float)
+    steady_rise = 20 + 0.05 * (years - 2006)
+    rng = np.random.default_rng(1)
+    noise = 800 + rng.normal(0, 150, len(years))
+
+    assert _trend_is_significant(years, steady_rise)
+    assert not _trend_is_significant(years, noise)
+    assert not _trend_is_significant(years[:3], steady_rise[:3])

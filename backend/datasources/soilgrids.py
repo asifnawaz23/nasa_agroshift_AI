@@ -166,3 +166,45 @@ def fetch_soilgrids(lat: float, lon: float, *, timeout: float = TIMEOUT_S,
         if attempt < retries:
             time.sleep(RETRY_WAIT_S * (attempt + 1))
     raise last_exc  # type: ignore[misc]
+
+
+# USDA texture classes the farmer can pick (same names usda_texture() returns).
+TEXTURE_CLASSES = (
+    "sand", "loamy sand", "sandy loam", "loam", "silt loam", "silt", "sandy clay loam",
+    "clay loam", "silty clay loam", "sandy clay", "silty clay", "clay",
+)
+
+
+def apply_texture_override(soil: dict | None, texture: str | None) -> dict | None:
+    """The farmer knows their field better than a 250 m map: use their texture.
+
+    Keeps SoilGrids' organic matter and pH when available, and recomputes the texture-based
+    hints (drainage, erodibility) that the alerts and erosion score use. Returns `soil`
+    unchanged when no override is given.
+    """
+    if not texture:
+        return soil
+    texture = texture.strip().lower()
+    if texture not in TEXTURE_CLASSES:
+        raise ValueError(f"Unknown soil texture: {texture}")
+    group = texture_group(texture)
+    if texture in ("silt", "silt loam"):
+        erod = "high"
+    elif group == "fine":
+        erod = "low"
+    else:
+        erod = "moderate"
+    out = dict(soil) if soil and soil.get("available", True) else {
+        k: None for k in ("clay_pct", "sand_pct", "silt_pct", "soc_g_kg", "organic_matter_pct", "ph")}
+    if soil and soil.get("texture") and soil.get("texture") != texture:
+        out["measured_texture"] = soil.get("texture")
+    out.update(
+        available=True,
+        texture=texture,
+        texture_group=group,
+        drainage_hint={"coarse": "fast", "medium": "moderate", "fine": "slow"}[group],
+        erodibility_hint=erod,
+        texture_source="farmer",
+    )
+    out.setdefault("source", SOURCE)
+    return out

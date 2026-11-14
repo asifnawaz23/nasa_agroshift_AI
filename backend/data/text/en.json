@@ -76,5 +76,13 @@
     "pest_history": "Ask about local pest and disease history for the new crops ({crops}).",
     "drainage": "This soil drains slowly: check for waterlogging before sowing {crops}.",
     "irrigation": "Rain covers only part of the crop water need here: confirm how much irrigation water you can count on."
+  },
+  "constraints": {
+    "rainfed_short": "Water: this rotation needs about {need} mm of water a year, but rain here averages about {rain} mm. Without irrigation, expect water stress in dry months.",
+    "limited_short": "Water: this rotation needs about {need} mm a year against about {rain} mm of rain. With limited irrigation, check you can cover the gap of about {gap} mm.",
+    "rice_no_irrigation": "Water: {crops} needs standing water for much of the season, which is hard without full irrigation.",
+    "equipment_basic": "Equipment: {crops} usually needs special equipment or extra labour, and you selected basic equipment.",
+    "market_cash_forage": "Market: {crops} is mainly fodder. With a cash-crop market preference, check that there is a buyer or your own livestock to use it.",
+    "market_forage_none": "Market: you prefer fodder crops, but this rotation has no strong fodder crop."
   }
 }

@@ -1,45 +1,63 @@
 
 import json
 import uuid
-from datasources.prepulled import load_locations
+from functools import lru_cache
 
-
+from django.db import DatabaseError, connection
 from django.http import JsonResponse
 from django.utils import timezone
-from django.http import JsonResponse
-from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt   # NEW
+from django.views.decorators.csrf import csrf_exempt
 
 from .serializers import AnalyzeRequestSerializer
 
 from datasources.cache import get_power_daily, get_soil
 from datasources.errors import DataSourceError
-from datasources.prepulled import find_featured, load_prepulled
+from datasources.prepulled import find_featured, load_locations, load_prepulled
+from datasources.soilgrids import apply_texture_override
 
-from engine.alerts import build_alerts
+from engine.alerts import build_alerts, summarize_alerts
 from engine.climate_profile import build_climate_profile
 from engine.constants import (
+    CONFIDENCE_HIGH_MIN_CORR,
+    CONFIDENCE_HIGH_MIN_YEARS,
     MAX_MISSING_FRACTION,
+    SCENARIO_LOW_CONFIDENCE_RAIN_PCT,
+    SCENARIO_LOW_CONFIDENCE_TEMP_C,
     MIN_YEARS_FOR_CLIMATOLOGY,
     VULNERABLE_DRY_SPELL_PROB,
     VULNERABLE_HEAT_DAYS,
 )
 from engine.knowledge import (
     bare_fraction_by_month,
+    field_occupancy,
     load_calendars,
     load_crops,
     load_templates,
+    sensitive_windows,
 )
 
 from engine.strategies import build_strategies
 
+from ai import prompts
+from ai.client import ANSWER_SCHEMA, ask_llm
+from ai.ratelimit import ai_rate_limited
+
 
 def health_check(request):
+    """Status + database check (plan section 11). Render's health check calls this."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        database = "ok"
+    except DatabaseError:
+        database = "unavailable"
+
     return JsonResponse({
-        "status": "success",
+        "status": "success" if database == "ok" else "degraded",
         "message": "FieldShift Planner API is running.",
+        "database": database,
         "timestamp": timezone.now().isoformat(),
-    })
+    }, status=200 if database == "ok" else 503)
 
 
 def _error_response(message, errors=None, status=400):
@@ -48,6 +66,21 @@ def _error_response(message, errors=None, status=400):
         "message": message,
         "errors": errors or {},
     }, status=status)
+
+
+# Thresholds for the vulnerable-month view. Heat and dry-spell values come from
+# engine.constants; frost and soil drying match the "moderate" alert level.
+VULNERABLE_FROST_DAYS = 1.0
+VULNERABLE_SOIL_MOISTURE_ANOMALY = -1.0
+
+
+def _month_value(data, month):
+    return (data or {}).get(str(month))
+
+
+def _scenario_active(scenario):
+    scenario = scenario or {}
+    return scenario.get("rain_pct", 0) != 0 or scenario.get("temp_c", 0) != 0
 
 
 def _climate_summary(profile):
@@ -75,6 +108,55 @@ def _climate_summary(profile):
     }
 
 
+def _climate_block(profile):
+    """Annual summary plus the month-by-month series the charts need."""
+    climatology = profile["monthly_climatology"]
+    water_balance = profile["water_balance_by_month"]
+    stress = profile["stress_by_month"]
+
+    monthly = []
+
+    for month in range(1, 13):
+        clim = climatology[str(month)]
+        balance = water_balance.get(str(month), {})
+
+        monthly.append({
+            "month": month,
+            "t_mean": clim["t_mean"],
+            "t_max": clim["t_max"],
+            "t_min": clim["t_min"],
+            "precip_mm": clim["precip_mm"],
+            "et0_mm": clim["et0_mm"],
+            "deficit_mm": balance.get("deficit_mm"),
+            "root_wetness": clim["root_wetness"],
+            "heat_days": _month_value(stress.get("heat_days"), month),
+            "severe_heat_days": _month_value(stress.get("severe_heat_days"), month),
+            "frost_days": _month_value(stress.get("frost_days"), month),
+            "dry_spell_prob": _month_value(stress.get("dry_spell_prob"), month),
+            "extreme_rain_days": _month_value(stress.get("extreme_rain_days"), month),
+            "soil_moisture_anomaly": _month_value(
+                profile.get("soil_moisture_anomaly_by_month"), month
+            ),
+            "ndvi": _month_value(profile.get("ndvi_by_month"), month),
+        })
+
+    return {
+        **_climate_summary(profile),
+        "years_covered": profile["years_covered"],
+        "monthly": monthly,
+        "trends": profile["trends"],
+        "year_stress_flags": profile["year_stress_flags"],
+        "frost_free_season": profile["frost_free_season"],
+        "soil_moisture_source": profile.get("soil_moisture_source"),
+        "bare_months_observed": profile.get("bare_months_observed"),
+        "basis": (
+            "simulated"
+            if _scenario_active(profile.get("scenario_applied"))
+            else "historical"
+        ),
+    }
+
+
 def _bare_windows(rotation):
     fractions = bare_fraction_by_month(rotation)
     months = [
@@ -91,17 +173,111 @@ def _bare_windows(rotation):
     ]
 
 
-def _vulnerable_months(profile):
+def _vulnerable_months(profile, rotation, zone, calendars):
+    """Months where a crop is in a sensitive growth stage and a matching stress
+    signal is present, with reasons, crops and stages.
+
+    stress_by_month is keyed by indicator first ({"heat_days": {"7": 6.5}}),
+    so each indicator is looked up per month.
+    """
+    stress = profile["stress_by_month"]
+    sm_anomaly = profile.get("soil_moisture_anomaly_by_month") or {}
+
+    crops_by_month = {month: [] for month in range(1, 13)}
+
+    for index, crops_in_field in enumerate(field_occupancy(rotation)):
+        month = index % 12 + 1
+        for crop in crops_in_field:
+            if crop not in crops_by_month[month]:
+                crops_by_month[month].append(crop)
+
+    stages_by_month = {}
+
+    for window in sensitive_windows(rotation, zone, calendars):
+        stages_by_month.setdefault(window["month"], []).append({
+            "crop": window["crop"],
+            "stage": window["stage"],
+            "sensitive": window["sensitive"],
+        })
+
     vulnerable = []
 
-    for month, values in profile["stress_by_month"].items():
-        if (
-            (values.get("dry_spell_prob") or 0) >= VULNERABLE_DRY_SPELL_PROB
-            or (values.get("heat_days") or 0) >= VULNERABLE_HEAT_DAYS
-        ):
-            vulnerable.append(int(month))
+    for month in range(1, 13):
+        if not crops_by_month[month]:
+            continue
 
-    return sorted(vulnerable)
+        heat = _month_value(stress.get("heat_days"), month) or 0
+        dry = _month_value(stress.get("dry_spell_prob"), month) or 0
+        frost = _month_value(stress.get("frost_days"), month) or 0
+        anomaly = _month_value(sm_anomaly, month)
+
+        # Only count a stress when a crop is in a growth stage sensitive to it
+        # (same rule as engine.alerts), so hot climates are not flagged every month.
+        sensitive = {
+            tag
+            for stage in stages_by_month.get(month, [])
+            for tag in stage["sensitive"]
+        }
+
+        reasons = []
+
+        if heat >= VULNERABLE_HEAT_DAYS and "heat" in sensitive:
+            reasons.append("heat")
+        if dry >= VULNERABLE_DRY_SPELL_PROB and "drought" in sensitive:
+            reasons.append("dry_spell")
+        if frost >= VULNERABLE_FROST_DAYS and "frost" in sensitive:
+            reasons.append("frost")
+        if (
+            anomaly is not None
+            and anomaly <= VULNERABLE_SOIL_MOISTURE_ANOMALY
+            and "drought" in sensitive
+        ):
+            reasons.append("soil_drying")
+
+        if reasons:
+            vulnerable.append({
+                "month": month,
+                "crops": crops_by_month[month],
+                "sensitive_stages": stages_by_month.get(month, []),
+                "reasons": reasons,
+                "values": {
+                    "heat_days": heat,
+                    "dry_spell_prob": dry,
+                    "frost_days": frost,
+                    "soil_moisture_anomaly": anomaly,
+                },
+            })
+
+    return vulnerable
+
+
+def _confidence(profile, data_tier, scenario, featured):
+    """High / medium / low label (team plan, section 7)."""
+    n_years = profile["n_years"]
+    missing = profile["missing_fraction"] or 0
+    corr = ((profile.get("validation") or {}).get("prism") or {}).get("precip_corr")
+
+    if (
+        not featured
+        or missing > MAX_MISSING_FRACTION
+        or abs(scenario.get("temp_c", 0)) > SCENARIO_LOW_CONFIDENCE_TEMP_C
+        or abs(scenario.get("rain_pct", 0)) > SCENARIO_LOW_CONFIDENCE_RAIN_PCT
+    ):
+        return "low"
+
+    if (
+        data_tier == "us_enhanced"
+        and n_years >= CONFIDENCE_HIGH_MIN_YEARS
+        and corr is not None
+        and corr > CONFIDENCE_HIGH_MIN_CORR
+    ):
+        return "high"
+
+    if n_years >= CONFIDENCE_HIGH_MIN_YEARS:
+        return "medium"
+
+    return "low"
+
 
 @csrf_exempt
 def analyze(request):
@@ -187,6 +363,10 @@ def analyze(request):
                 "fetched_at": None,
             }
 
+        # The farmer's own soil texture wins over the 250 m SoilGrids estimate.
+        measured_soil = soil
+        soil = apply_texture_override(soil, overrides.get("soil_texture"))
+
         smap = prepulled.get("smap")
         ndvi = prepulled.get("ndvi")
         prism = prepulled.get("prism")
@@ -207,10 +387,7 @@ def analyze(request):
         )
 
         # Build a separate scenario profile only when a change was requested.
-        scenario_active = (
-            scenario.get("rain_pct", 0) != 0
-            or scenario.get("temp_c", 0) != 0
-        )
+        scenario_active = _scenario_active(scenario)
 
         profile = baseline_profile
 
@@ -244,6 +421,8 @@ def analyze(request):
             crops=crops,
             calendars=calendars,
             templates=templates,
+            lang=lang,
+            data_tier=data_tier,
         )
 
         # Generate alerts for the farmer's current rotation.
@@ -297,11 +476,17 @@ def analyze(request):
                 "name": featured["name"] if featured else None,
                 "country": featured["country"] if featured else None,
                 "zone": zone,
+                "featured": bool(featured),
+                "slug": featured["slug"] if featured else None,
             },
             "data_quality": {
                 "status": (
                     "partial" if warnings else "complete"
                 ),
+                "confidence": _confidence(
+                    profile, data_tier, scenario, bool(featured)
+                ),
+                "fallback_used": bool(power_meta.get("fallback_used")),
                 "tier": data_tier,
                 "sources": sources,
                 "warnings": warnings,
@@ -312,19 +497,25 @@ def analyze(request):
                 "soil_cache": soil_meta,
             },
             "climate": {
-                "baseline": _climate_summary(baseline_profile),
-                "scenario": {
-                    "rain_pct": scenario.get("rain_pct", 0),
-                    "temp_c": scenario.get("temp_c", 0),
-                    **_climate_summary(profile),
-                },
+                "baseline": _climate_block(baseline_profile),
+                "scenario": (
+                    {
+                        "rain_pct": scenario.get("rain_pct", 0),
+                        "temp_c": scenario.get("temp_c", 0),
+                        **_climate_block(profile),
+                    }
+                    if scenario_active else None
+                ),
             },
             "soil": {
-                "measured": soil,
+                "measured": measured_soil,
+                "used": soil,
                 "farmer_texture_override": overrides.get("soil_texture"),
             },
             "bare_windows": _bare_windows(current_rotation),
-            "vulnerable_months": _vulnerable_months(profile),
+            "vulnerable_months": _vulnerable_months(
+                profile, current_rotation, zone, calendars
+            ),
             "alerts": alerts,
             "strategies": strategies,
             "disclaimer": (
@@ -346,6 +537,29 @@ def analyze(request):
             {"data_source": [str(exc)]},
             status=503,
         )
+
+
+@lru_cache(maxsize=16)
+def _pin_alert_summary(slug, lat, zone):
+    """Worst historical alert for a pin's default rotation, for the map pin colour.
+
+    Uses the pin's offline POWER and soil snapshot, so it is fast and works without internet.
+    Cached per process (snapshots only change on deploy). None when the pin has no snapshot.
+    """
+    try:
+        prepulled = load_prepulled(slug)
+        if prepulled.get("power") is None:
+            return None
+        profile = build_climate_profile(
+            prepulled["power"], lat, smap=prepulled.get("smap"), ndvi=prepulled.get("ndvi"),
+            prism=prepulled.get("prism"), zone=zone,
+        )
+        rotation = load_templates()[zone]["current_default"]["rotation"]
+        alerts = build_alerts(profile=profile, rotation=rotation, zone=zone,
+                              soil=prepulled.get("soil"))
+        return summarize_alerts(alerts)
+    except (KeyError, ValueError, OSError):
+        return None
 
 
 def locations(request):
@@ -378,6 +592,13 @@ def locations(request):
             ),
             "tier": location["tier"],
             "featured": location["featured"],
+            "zone_key": location["zone"],
+            "name_ur": location.get("name_ur"),
+            "status": location.get("status"),
+            # Pin colour: worst historical alert for the default rotation (not a forecast).
+            "alert_summary": _pin_alert_summary(
+                location["slug"], location["lat"], location["zone"]
+            ),
         })
 
     return JsonResponse({
@@ -427,216 +648,117 @@ def crops(request):
         "results": results,
     })
 
-@csrf_exempt
-def explain(request):
-    if request.method != "POST":
-        return _error_response("Method not allowed.", status=405)
-
+def _read_json_body(request):
+    """(body, error_response). body is a dict when error_response is None."""
     try:
         body = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return _error_response(
-            "Request body must contain valid JSON.",
-            {"body": ["Invalid JSON."]},
-        )
-
+        return None, _error_response("Request body must contain valid JSON.", {"body": ["Invalid JSON."]})
     if not isinstance(body, dict):
-        return _error_response(
-            "Request body must be a JSON object.",
-            {"body": ["Expected a JSON object."]},
-        )
+        return None, _error_response("Request body must be a JSON object.", {"body": ["Expected a JSON object."]})
+    return body, None
+
+
+def _ai_response(answer, ai_used, **extra):
+    """Section 10 answer shape + ai_used. `explanation` repeats the summary for older clients."""
+    return JsonResponse({
+        "status": "success",
+        **answer,
+        "explanation": answer.get("summary", ""),
+        "ai_used": ai_used,
+        **extra,
+        "disclaimer": AI_DISCLAIMER,
+    })
+
+
+AI_DISCLAIMER = (
+    "AI explanations are generated from this analysis and may contain mistakes. They support, "
+    "and do not replace, farmer judgment and local agricultural expertise."
+)
+
+
+@csrf_exempt
+@ai_rate_limited
+def explain(request):
+    """POST {section, analysis, lang} -> grounded explanation of one part of the analysis."""
+    if request.method != "POST":
+        return _error_response("Method not allowed.", status=405)
+
+    body, error = _read_json_body(request)
+    if error:
+        return error
 
     analysis = body.get("analysis")
     lang = body.get("lang", "en")
+    section = body.get("section", "overview")
 
     if not isinstance(analysis, dict):
-        return _error_response(
-            "An analysis object is required.",
-            {"analysis": ["Expected an analysis object."]},
-        )
-
+        return _error_response("An analysis object is required.",
+                               {"analysis": ["Expected the /api/analyze/ response object."]})
     if lang not in ("en", "ur"):
+        return _error_response("Unsupported language.", {"lang": ["Use en or ur."]})
+    if not prompts.is_valid_section(section):
         return _error_response(
-            "Unsupported language.",
-            {"lang": ["Use en or ur."]},
+            "Unknown section.",
+            {"section": [f"Use one of {', '.join(prompts.SECTIONS)} or strategy:<key>."]},
         )
 
-    strategies = analysis.get("strategies", [])
+    trimmed = prompts.trim_analysis(analysis, section)
+    answer = ask_llm(prompts.system_prompt(trimmed, lang), prompts.explain_messages(section),
+                     ANSWER_SCHEMA)
+    ai_used = answer is not None
+    if not ai_used:
+        answer = prompts.template_answer(analysis, section, lang)
 
-    if not isinstance(strategies, list) or not strategies:
-        return _error_response(
-            "Analysis does not contain strategies.",
-            {"strategies": ["At least one strategy is required."]},
-        )
-
-    valid_strategies = [
-        item for item in strategies
-        if isinstance(item, dict)
-        and isinstance(item.get("scores"), dict)
-        and isinstance(item["scores"].get("overall"), (int, float))
-    ]
-
-    if not valid_strategies:
-        return _error_response(
-            "No valid strategy scores were supplied.",
-            {"strategies": ["Overall scores are missing."]},
-        )
-
-    best = max(
-        valid_strategies,
-        key=lambda item: item["scores"]["overall"],
+    best = prompts.best_strategy(analysis)
+    return _ai_response(
+        answer, ai_used, section=section,
+        recommended_strategy=best.get("key") if best else None,
+        overall_score=best["scores"]["overall"] if best else None,
     )
 
-    score = best["scores"]["overall"]
-    name = best.get("name", best.get("key", "Recommended strategy"))
-
-    if lang == "ur":
-        explanation = (
-            f"دستیاب تجزیے کے مطابق {name} کا مجموعی اسکور "
-            f"{score}/100 ہے۔ یہ فراہم کردہ حکمت عملیوں میں سب سے زیادہ ہے۔ "
-            "یہ اسکور فراہم کردہ آب و ہوا، مٹی، ترجیحات اور پابندیوں پر "
-            "مبنی ہے۔ اسے یقینی پیداوار یا آمدنی کی پیش گوئی نہ سمجھیں۔"
-        )
-    else:
-        explanation = (
-            f"Based on the supplied analysis, {name} has the highest "
-            f"overall score at {score}/100. This score is relative to "
-            "the other supplied strategies and reflects the environmental "
-            "data, priorities and constraints used in the analysis. "
-            "It is not a guaranteed yield or income prediction."
-        )
-
-    return JsonResponse({
-        "status": "success",
-        "explanation": explanation,
-        "recommended_strategy": best.get("key"),
-        "overall_score": score,
-        "source": "supplied_analysis",
-        "ai_generated": False,
-    })
 
 @csrf_exempt
+@ai_rate_limited
 def chat(request):
+    """POST {messages: [{role, content}], analysis, lang} -> answer to the latest question.
+
+    The frontend keeps the history and sends it every time (stateless server). A single
+    {"message": "..."} is also accepted.
+    """
     if request.method != "POST":
         return _error_response("Method not allowed.", status=405)
 
-    try:
-        body = json.loads(request.body)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return _error_response(
-            "Request body must contain valid JSON.",
-            {"body": ["Invalid JSON."]},
-        )
+    body, error = _read_json_body(request)
+    if error:
+        return error
 
-    if not isinstance(body, dict):
-        return _error_response(
-            "Request body must be a JSON object.",
-            {"body": ["Expected a JSON object."]},
-        )
-
-    message = body.get("message")
     lang = body.get("lang", "en")
     analysis = body.get("analysis")
-
-    if not isinstance(message, str) or not message.strip():
-        return _error_response(
-            "A message is required.",
-            {"message": ["Enter a non-empty message."]},
-        )
+    messages = body.get("messages")
+    if messages is None and isinstance(body.get("message"), str):
+        messages = [{"role": "user", "content": body["message"]}]
 
     if lang not in ("en", "ur"):
-        return _error_response(
-            "Unsupported language.",
-            {"lang": ["Use en or ur."]},
-        )
-
+        return _error_response("Unsupported language.", {"lang": ["Use en or ur."]})
     if analysis is not None and not isinstance(analysis, dict):
+        return _error_response("Analysis must be a JSON object or null.",
+                               {"analysis": ["Expected an object or null."]})
+    history = prompts.clean_chat_history(messages)
+    if history is None:
         return _error_response(
-            "Analysis must be a JSON object or null.",
-            {"analysis": ["Expected an object or null."]},
+            "A question is required.",
+            {"messages": ["Send [{\"role\": \"user\", \"content\": \"...\"}], ending with the farmer's question."]},
         )
 
-    question = message.strip().lower()
-    answer = None
+    analysis = analysis or {}
+    trimmed = prompts.trim_analysis(analysis, "overview")
+    answer = ask_llm(prompts.system_prompt(trimmed, lang), history, ANSWER_SCHEMA)
+    ai_used = answer is not None
+    if not ai_used:
+        question = history[-1]["content"]
+        answer = prompts.crop_fact_answer(question, lang)
+        if answer is None:
+            answer = prompts.template_answer(analysis, "overview", lang)
 
-    # Answer crop-specific questions using the existing crop knowledge.
-    crop_data = load_crops()
-
-    for crop in crop_data.values():
-        names = [
-            crop.get("slug", "").lower(),
-            crop.get("name", "").lower(),
-            crop.get("name_ur", ""),
-        ]
-
-        if any(name and name in question for name in names):
-            if lang == "ur":
-                answer = (
-                    f"{crop['name']} کے بارے میں دستیاب معلومات: "
-                    f"پانی کی ضرورت تقریباً {crop.get('water_need_mm')} ملی میٹر ہے؛ "
-                    f"خشک سالی برداشت {crop.get('drought_tolerance')}/5 ہے؛ "
-                    f"گرمی برداشت {crop.get('heat_tolerance')}/5 ہے۔"
-                )
-            else:
-                answer = (
-                    f"{crop['name']}: water requirement is approximately "
-                    f"{crop.get('water_need_mm')} mm; drought tolerance is "
-                    f"{crop.get('drought_tolerance')}/5; heat tolerance is "
-                    f"{crop.get('heat_tolerance')}/5. "
-                    f"Source notes: {crop.get('sources') or 'Not specified.'}"
-                )
-            break
-
-    # If analysis is supplied, provide its highest-scoring strategy.
-    if answer is None and analysis:
-        strategies = analysis.get("strategies", [])
-
-        valid = [
-            item for item in strategies
-            if isinstance(item, dict)
-            and isinstance(item.get("scores"), dict)
-            and isinstance(item["scores"].get("overall"), (int, float))
-        ] if isinstance(strategies, list) else []
-
-        if valid:
-            best = max(
-                valid,
-                key=lambda item: item["scores"]["overall"],
-            )
-            name = best.get("name", best.get("key"))
-            score = best["scores"]["overall"]
-
-            if lang == "ur":
-                answer = (
-                    f"آپ کے فراہم کردہ تجزیے میں {name} کا مجموعی اسکور "
-                    f"{score}/100 ہے۔ یہ فراہم کردہ حکمت عملیوں میں سب سے زیادہ ہے۔"
-                )
-            else:
-                answer = (
-                    f"Your supplied analysis gives {name} the highest "
-                    f"overall score: {score}/100."
-                )
-
-    # Explicit fallback: no LLM is currently configured.
-    if answer is None:
-        if lang == "ur":
-            answer = (
-                "میں فی الحال دستیاب فصلوں کی معلومات اور فراہم کردہ "
-                "تجزیے کی بنیاد پر جواب دے سکتا ہوں۔ مزید مخصوص جواب کے لیے "
-                "فصل کا نام یا تجزیے کی تفصیلات فراہم کریں۔"
-            )
-        else:
-            answer = (
-                "I can currently answer using the available crop knowledge "
-                "and a supplied rotation analysis. Please include a crop name "
-                "or analysis details for a more specific answer. "
-                "The AI language model is not configured."
-            )
-
-    return JsonResponse({
-        "status": "success",
-        "reply": answer,
-        "source": "crop_knowledge_or_supplied_analysis",
-        "ai_generated": False,
-    })
-
+    return _ai_response(answer, ai_used, reply=answer["summary"])

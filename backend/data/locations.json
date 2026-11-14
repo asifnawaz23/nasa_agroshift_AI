@@ -14,7 +14,7 @@
       "country": "PK", "zone": "subtropical", "tier": "featured", "featured": true,
       "default_rotation": "current_default",
       "status": "provisional",
-      "why": "MODIS NDVI 2006-2025 is flat (0.23-0.32): probably town edge or bare land, not cropland.",
+      "why": "MODIS NDVI 2006-2025 is flat (0.23-0.32): town edge or bare land. Candidates checked 2026-11-15 (25.45,68.60 always green; 25.25,68.50 bare; 25.70,68.50 mixed) are not cropland either. Kept here with SMAP only (9 km cell covers the surrounding farmland); NDVI not used.",
       "candidates": [[25.45, 68.60], [25.25, 68.50], [25.70, 68.50]]
     },
     {
@@ -24,19 +24,20 @@
       "lat": 31.30, "lon": 73.00,
       "country": "PK", "zone": "subtropical", "tier": "featured", "featured": true,
       "default_rotation": "current_default",
-      "status": "provisional",
-      "why": "Moved from 31.4, 73.1 (city: no soil data, NDVI 0.13-0.19). SoilGrids: silt loam. NDVI request pending.",
+      "status": "confirmed",
+      "why": "Moved from 31.4, 73.1 (city: no soil data, NDVI 0.13-0.19). Rural point: MODIS NDVI 0.30-0.63 with crop seasons (some mixing), SoilGrids silt loam. NDVI + SMAP pre-pulled for this point.",
       "candidates": []
     },
     {
       "slug": "iowa-central",
       "name": "Central Iowa (near Ames)",
       "name_ur": "وسطی آئیووا (ایمز کے قریب)",
-      "lat": 42.0, "lon": -93.6,
-      "country": "US", "zone": "temperate", "tier": "us_enhanced", "featured": true,
+      "lat": 42.10, "lon": -93.45,
+      "country": "US", "zone": "temperate", "tier": "featured", "featured": true,
+      "planned_tier": "us_enhanced",
       "default_rotation": "current_default",
-      "status": "provisional",
-      "why": "MODIS NDVI 0.33-0.63: mixed with the town of Ames. Corn/soy fields should reach ~0.8.",
+      "status": "confirmed",
+      "why": "Moved from 42.0, -93.6 (NDVI 0.33-0.63, mixed with the town of Ames). New point: MODIS NDVI 0.01-0.89, strong corn/soy seasons. SMAP still needs a new AppEEARS request for this point (old SMAP was ~15 km away, not used).",
       "candidates": [[42.10, -93.45], [41.95, -93.75], [42.15, -93.75]]
     }
   ]
