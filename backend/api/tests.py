@@ -214,3 +214,93 @@ class SeedCommandTests(TestCase):
         self.assertTrue(RotationTemplate.objects.filter(key="current_alt_rice_wheat").exists())
         self.assertEqual(Location.objects.count(), 3)
         self.assertEqual(LocationCache.objects.filter(kind="power").count(), 3)
+
+
+MOCK_ANALYSIS = json.loads(
+    (Path(__file__).resolve().parents[2] / "docs" / "mock_analyze.json").read_text(encoding="utf-8")
+)
+AI_ANSWER = {"summary": "July is the risky month.", "points": [], "actions": [],
+             "needs_expert": [], "confidence": "medium"}
+
+
+class AiEndpointTests(TestCase):
+    """/api/explain/ and /api/chat/: LLM answer when available, grounded template otherwise."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def post(self, url, body):
+        return self.client.post(url, json.dumps(body), content_type="application/json")
+
+    def assert_answer_shape(self, data):
+        for key in ("summary", "points", "actions", "needs_expert", "confidence", "ai_used", "disclaimer"):
+            self.assertIn(key, data)
+
+    @patch("api.views.ask_llm", return_value=None)
+    def test_explain_falls_back_to_template_without_llm(self, _):
+        res = self.post("/api/explain/", {"section": "alerts", "analysis": MOCK_ANALYSIS})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assert_answer_shape(data)
+        self.assertFalse(data["ai_used"])
+        self.assertTrue(data["points"], "template answer is built from the analysis")
+
+    @patch("api.views.ask_llm", return_value=AI_ANSWER)
+    def test_explain_uses_llm_answer_and_trims_the_analysis(self, ask):
+        res = self.post("/api/explain/", {"section": "water_balance", "analysis": MOCK_ANALYSIS, "lang": "ur"})
+        data = res.json()
+        self.assertTrue(data["ai_used"])
+        self.assertEqual(data["summary"], AI_ANSWER["summary"])
+        system, messages, schema = ask.call_args.args
+        self.assertIn("deficit_mm", system)
+        self.assertNotIn("why_suggested", system, "water balance does not need strategy text")
+        self.assertIn("Urdu", system)
+        self.assertIn("fertilizer", system)
+
+    def test_explain_rejects_unknown_section(self):
+        res = self.post("/api/explain/", {"section": "weather", "analysis": MOCK_ANALYSIS})
+        self.assertEqual(res.status_code, 400)
+
+    @patch("api.views.ask_llm", return_value=None)
+    def test_explain_strategy_section(self, _):
+        res = self.post("/api/explain/", {"section": "strategy:soil_builder", "analysis": MOCK_ANALYSIS})
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.json()["needs_expert"])
+
+    @patch("api.views.ask_llm", return_value=AI_ANSWER)
+    def test_chat_sends_history_to_llm(self, ask):
+        history = [{"role": "user", "content": "Is July risky?"},
+                   {"role": "assistant", "content": "Yes, July is dry."},
+                   {"role": "user", "content": "What can I do?"}]
+        res = self.post("/api/chat/", {"messages": history, "analysis": MOCK_ANALYSIS})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(ask.call_args.args[1], history)
+        self.assertEqual(res.json()["reply"], AI_ANSWER["summary"])
+
+    @patch("api.views.ask_llm", return_value=None)
+    def test_chat_crop_question_without_llm(self, _):
+        res = self.post("/api/chat/", {"message": "How much water does wheat need?"})
+        data = res.json()
+        self.assertFalse(data["ai_used"])
+        self.assertIn("Wheat", data["summary"])
+
+    def test_chat_rejects_history_not_ending_with_a_question(self):
+        res = self.post("/api/chat/", {"messages": [{"role": "assistant", "content": "Hi"}]})
+        self.assertEqual(res.status_code, 400)
+
+    @patch("api.views.ask_llm", return_value=None)
+    def test_ai_endpoints_are_rate_limited(self, _):
+        from ai.ratelimit import AI_RATE_LIMIT
+
+        body = {"message": "wheat"}
+        for _ in range(AI_RATE_LIMIT):
+            self.assertEqual(self.post("/api/chat/", body).status_code, 200)
+        self.assertEqual(self.post("/api/chat/", body).status_code, 429)
+
+
+class HealthTests(TestCase):
+    def test_health_reports_database(self):
+        res = self.client.get("/api/health/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["database"], "ok")

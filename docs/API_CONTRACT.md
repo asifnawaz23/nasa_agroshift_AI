@@ -492,7 +492,40 @@ The explanation should cover:
 - Differences between baseline and scenario results.
 - Data limitations and uncertainties.
 
-The exact request and response schema will be finalized during implementation of the explanation service.
+#### Request
+
+```json
+{"section": "water_balance", "analysis": { "...the /api/analyze/ response..." }, "lang": "ur"}
+```
+
+`section`: `climate`, `water_balance`, `stress`, `alerts`, `scenario`, `overview`, or `strategy:<key>` (for example `strategy:soil_builder`). The server trims the analysis to what the section needs before sending it to the AI.
+
+#### Response (shared by `/api/explain/` and `/api/chat/`)
+
+```json
+{
+  "status": "success",
+  "summary": "Short plain-language answer.",
+  "points": [
+    {"type": "observed", "text": "July rain (68 mm) is far below evaporation demand (175 mm).", "source": "NASA POWER"},
+    {"type": "estimated_cause", "text": "Heat raises evaporation faster than rain refills the soil.", "source": "reasoning"},
+    {"type": "prediction", "text": "With +3 °C, heat days in July rise (simulated).", "source": "What-If"}
+  ],
+  "actions": ["..."],
+  "needs_expert": ["..."],
+  "confidence": "medium",
+  "ai_used": true,
+  "explanation": "Same as summary (kept for older clients).",
+  "disclaimer": "AI explanations are generated from this analysis and may contain mistakes. ..."
+}
+```
+
+- Show a badge per point: `observed` = Observed, `estimated_cause` = Estimated cause, `prediction` = Prediction / scenario.
+- `ai_used: false` means the AI was not available (no key, timeout, error or refusal) and the answer was built from the analysis itself. Same shape, so the UI does not change; show a small "summary from data" label.
+- `/api/explain/` also returns `section`, `recommended_strategy` and `overall_score`.
+- Text follows `lang`. No fertilizer or pesticide products or doses are ever given.
+- Rate limit: 20 requests per 10 minutes per visitor across both AI endpoints; over that, `429` with a plain message.
+
 
 ---
 
@@ -515,7 +548,23 @@ The assistant should:
 - Avoid fertilizer and pesticide dosing instructions.
 - Provide a fallback response if the language model is unavailable.
 
-The exact request and response schema will be finalized during implementation of the chat service.
+#### Request
+
+```json
+{"messages": [
+   {"role": "user", "content": "Should I irrigate in July?"},
+   {"role": "assistant", "content": "July has a 107 mm water gap..."},
+   {"role": "user", "content": "And in August?"}
+ ],
+ "analysis": { "...the /api/analyze/ response, or null..." },
+ "lang": "en"}
+```
+
+The frontend keeps the history and sends it every time (the server stores nothing). The history must end with the farmer's question; the last 12 messages are used. A single `{"message": "..."}` is also accepted.
+
+#### Response
+
+Same shape as `/api/explain/` above, plus `reply` (the summary, to show as the chat bubble). Without the AI, a question naming a crop gets facts from the crop table; other questions get the analysis summary.
 
 ---
 

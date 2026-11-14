@@ -1,20 +1,17 @@
 
 import json
 import uuid
-from datasources.prepulled import load_locations
 
-
+from django.db import DatabaseError, connection
 from django.http import JsonResponse
 from django.utils import timezone
-from django.http import JsonResponse
-from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt   # NEW
+from django.views.decorators.csrf import csrf_exempt
 
 from .serializers import AnalyzeRequestSerializer
 
 from datasources.cache import get_power_daily, get_soil
 from datasources.errors import DataSourceError
-from datasources.prepulled import find_featured, load_prepulled
+from datasources.prepulled import find_featured, load_locations, load_prepulled
 
 from engine.alerts import build_alerts
 from engine.climate_profile import build_climate_profile
@@ -39,13 +36,26 @@ from engine.knowledge import (
 
 from engine.strategies import build_strategies
 
+from ai import prompts
+from ai.client import ANSWER_SCHEMA, ask_llm
+from ai.ratelimit import ai_rate_limited
+
 
 def health_check(request):
+    """Status + database check (plan section 11). Render's health check calls this."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        database = "ok"
+    except DatabaseError:
+        database = "unavailable"
+
     return JsonResponse({
-        "status": "success",
+        "status": "success" if database == "ok" else "degraded",
         "message": "FieldShift Planner API is running.",
+        "database": database,
         "timestamp": timezone.now().isoformat(),
-    })
+    }, status=200 if database == "ok" else 503)
 
 
 def _error_response(message, errors=None, status=400):
@@ -601,216 +611,117 @@ def crops(request):
         "results": results,
     })
 
-@csrf_exempt
-def explain(request):
-    if request.method != "POST":
-        return _error_response("Method not allowed.", status=405)
-
+def _read_json_body(request):
+    """(body, error_response). body is a dict when error_response is None."""
     try:
         body = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return _error_response(
-            "Request body must contain valid JSON.",
-            {"body": ["Invalid JSON."]},
-        )
-
+        return None, _error_response("Request body must contain valid JSON.", {"body": ["Invalid JSON."]})
     if not isinstance(body, dict):
-        return _error_response(
-            "Request body must be a JSON object.",
-            {"body": ["Expected a JSON object."]},
-        )
+        return None, _error_response("Request body must be a JSON object.", {"body": ["Expected a JSON object."]})
+    return body, None
+
+
+def _ai_response(answer, ai_used, **extra):
+    """Section 10 answer shape + ai_used. `explanation` repeats the summary for older clients."""
+    return JsonResponse({
+        "status": "success",
+        **answer,
+        "explanation": answer.get("summary", ""),
+        "ai_used": ai_used,
+        **extra,
+        "disclaimer": AI_DISCLAIMER,
+    })
+
+
+AI_DISCLAIMER = (
+    "AI explanations are generated from this analysis and may contain mistakes. They support, "
+    "and do not replace, farmer judgment and local agricultural expertise."
+)
+
+
+@csrf_exempt
+@ai_rate_limited
+def explain(request):
+    """POST {section, analysis, lang} -> grounded explanation of one part of the analysis."""
+    if request.method != "POST":
+        return _error_response("Method not allowed.", status=405)
+
+    body, error = _read_json_body(request)
+    if error:
+        return error
 
     analysis = body.get("analysis")
     lang = body.get("lang", "en")
+    section = body.get("section", "overview")
 
     if not isinstance(analysis, dict):
-        return _error_response(
-            "An analysis object is required.",
-            {"analysis": ["Expected an analysis object."]},
-        )
-
+        return _error_response("An analysis object is required.",
+                               {"analysis": ["Expected the /api/analyze/ response object."]})
     if lang not in ("en", "ur"):
+        return _error_response("Unsupported language.", {"lang": ["Use en or ur."]})
+    if not prompts.is_valid_section(section):
         return _error_response(
-            "Unsupported language.",
-            {"lang": ["Use en or ur."]},
+            "Unknown section.",
+            {"section": [f"Use one of {', '.join(prompts.SECTIONS)} or strategy:<key>."]},
         )
 
-    strategies = analysis.get("strategies", [])
+    trimmed = prompts.trim_analysis(analysis, section)
+    answer = ask_llm(prompts.system_prompt(trimmed, lang), prompts.explain_messages(section),
+                     ANSWER_SCHEMA)
+    ai_used = answer is not None
+    if not ai_used:
+        answer = prompts.template_answer(analysis, section, lang)
 
-    if not isinstance(strategies, list) or not strategies:
-        return _error_response(
-            "Analysis does not contain strategies.",
-            {"strategies": ["At least one strategy is required."]},
-        )
-
-    valid_strategies = [
-        item for item in strategies
-        if isinstance(item, dict)
-        and isinstance(item.get("scores"), dict)
-        and isinstance(item["scores"].get("overall"), (int, float))
-    ]
-
-    if not valid_strategies:
-        return _error_response(
-            "No valid strategy scores were supplied.",
-            {"strategies": ["Overall scores are missing."]},
-        )
-
-    best = max(
-        valid_strategies,
-        key=lambda item: item["scores"]["overall"],
+    best = prompts.best_strategy(analysis)
+    return _ai_response(
+        answer, ai_used, section=section,
+        recommended_strategy=best.get("key") if best else None,
+        overall_score=best["scores"]["overall"] if best else None,
     )
 
-    score = best["scores"]["overall"]
-    name = best.get("name", best.get("key", "Recommended strategy"))
-
-    if lang == "ur":
-        explanation = (
-            f"دستیاب تجزیے کے مطابق {name} کا مجموعی اسکور "
-            f"{score}/100 ہے۔ یہ فراہم کردہ حکمت عملیوں میں سب سے زیادہ ہے۔ "
-            "یہ اسکور فراہم کردہ آب و ہوا، مٹی، ترجیحات اور پابندیوں پر "
-            "مبنی ہے۔ اسے یقینی پیداوار یا آمدنی کی پیش گوئی نہ سمجھیں۔"
-        )
-    else:
-        explanation = (
-            f"Based on the supplied analysis, {name} has the highest "
-            f"overall score at {score}/100. This score is relative to "
-            "the other supplied strategies and reflects the environmental "
-            "data, priorities and constraints used in the analysis. "
-            "It is not a guaranteed yield or income prediction."
-        )
-
-    return JsonResponse({
-        "status": "success",
-        "explanation": explanation,
-        "recommended_strategy": best.get("key"),
-        "overall_score": score,
-        "source": "supplied_analysis",
-        "ai_generated": False,
-    })
 
 @csrf_exempt
+@ai_rate_limited
 def chat(request):
+    """POST {messages: [{role, content}], analysis, lang} -> answer to the latest question.
+
+    The frontend keeps the history and sends it every time (stateless server). A single
+    {"message": "..."} is also accepted.
+    """
     if request.method != "POST":
         return _error_response("Method not allowed.", status=405)
 
-    try:
-        body = json.loads(request.body)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return _error_response(
-            "Request body must contain valid JSON.",
-            {"body": ["Invalid JSON."]},
-        )
+    body, error = _read_json_body(request)
+    if error:
+        return error
 
-    if not isinstance(body, dict):
-        return _error_response(
-            "Request body must be a JSON object.",
-            {"body": ["Expected a JSON object."]},
-        )
-
-    message = body.get("message")
     lang = body.get("lang", "en")
     analysis = body.get("analysis")
-
-    if not isinstance(message, str) or not message.strip():
-        return _error_response(
-            "A message is required.",
-            {"message": ["Enter a non-empty message."]},
-        )
+    messages = body.get("messages")
+    if messages is None and isinstance(body.get("message"), str):
+        messages = [{"role": "user", "content": body["message"]}]
 
     if lang not in ("en", "ur"):
-        return _error_response(
-            "Unsupported language.",
-            {"lang": ["Use en or ur."]},
-        )
-
+        return _error_response("Unsupported language.", {"lang": ["Use en or ur."]})
     if analysis is not None and not isinstance(analysis, dict):
+        return _error_response("Analysis must be a JSON object or null.",
+                               {"analysis": ["Expected an object or null."]})
+    history = prompts.clean_chat_history(messages)
+    if history is None:
         return _error_response(
-            "Analysis must be a JSON object or null.",
-            {"analysis": ["Expected an object or null."]},
+            "A question is required.",
+            {"messages": ["Send [{\"role\": \"user\", \"content\": \"...\"}], ending with the farmer's question."]},
         )
 
-    question = message.strip().lower()
-    answer = None
+    analysis = analysis or {}
+    trimmed = prompts.trim_analysis(analysis, "overview")
+    answer = ask_llm(prompts.system_prompt(trimmed, lang), history, ANSWER_SCHEMA)
+    ai_used = answer is not None
+    if not ai_used:
+        question = history[-1]["content"]
+        answer = prompts.crop_fact_answer(question, lang)
+        if answer is None:
+            answer = prompts.template_answer(analysis, "overview", lang)
 
-    # Answer crop-specific questions using the existing crop knowledge.
-    crop_data = load_crops()
-
-    for crop in crop_data.values():
-        names = [
-            crop.get("slug", "").lower(),
-            crop.get("name", "").lower(),
-            crop.get("name_ur", ""),
-        ]
-
-        if any(name and name in question for name in names):
-            if lang == "ur":
-                answer = (
-                    f"{crop['name']} کے بارے میں دستیاب معلومات: "
-                    f"پانی کی ضرورت تقریباً {crop.get('water_need_mm')} ملی میٹر ہے؛ "
-                    f"خشک سالی برداشت {crop.get('drought_tolerance')}/5 ہے؛ "
-                    f"گرمی برداشت {crop.get('heat_tolerance')}/5 ہے۔"
-                )
-            else:
-                answer = (
-                    f"{crop['name']}: water requirement is approximately "
-                    f"{crop.get('water_need_mm')} mm; drought tolerance is "
-                    f"{crop.get('drought_tolerance')}/5; heat tolerance is "
-                    f"{crop.get('heat_tolerance')}/5. "
-                    f"Source notes: {crop.get('sources') or 'Not specified.'}"
-                )
-            break
-
-    # If analysis is supplied, provide its highest-scoring strategy.
-    if answer is None and analysis:
-        strategies = analysis.get("strategies", [])
-
-        valid = [
-            item for item in strategies
-            if isinstance(item, dict)
-            and isinstance(item.get("scores"), dict)
-            and isinstance(item["scores"].get("overall"), (int, float))
-        ] if isinstance(strategies, list) else []
-
-        if valid:
-            best = max(
-                valid,
-                key=lambda item: item["scores"]["overall"],
-            )
-            name = best.get("name", best.get("key"))
-            score = best["scores"]["overall"]
-
-            if lang == "ur":
-                answer = (
-                    f"آپ کے فراہم کردہ تجزیے میں {name} کا مجموعی اسکور "
-                    f"{score}/100 ہے۔ یہ فراہم کردہ حکمت عملیوں میں سب سے زیادہ ہے۔"
-                )
-            else:
-                answer = (
-                    f"Your supplied analysis gives {name} the highest "
-                    f"overall score: {score}/100."
-                )
-
-    # Explicit fallback: no LLM is currently configured.
-    if answer is None:
-        if lang == "ur":
-            answer = (
-                "میں فی الحال دستیاب فصلوں کی معلومات اور فراہم کردہ "
-                "تجزیے کی بنیاد پر جواب دے سکتا ہوں۔ مزید مخصوص جواب کے لیے "
-                "فصل کا نام یا تجزیے کی تفصیلات فراہم کریں۔"
-            )
-        else:
-            answer = (
-                "I can currently answer using the available crop knowledge "
-                "and a supplied rotation analysis. Please include a crop name "
-                "or analysis details for a more specific answer. "
-                "The AI language model is not configured."
-            )
-
-    return JsonResponse({
-        "status": "success",
-        "reply": answer,
-        "source": "crop_knowledge_or_supplied_analysis",
-        "ai_generated": False,
-    })
-
+    return _ai_response(answer, ai_used, reply=answer["summary"])
