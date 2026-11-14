@@ -1,111 +1,114 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AuthShell, { IconInput, PasswordInput } from '../components/AuthShell.jsx';
+import * as yup from 'yup';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../features/auth/authSlice.js';
+
+const loginSchema = yup.object().shape({
+  email: yup.string().email('Invalid email address').required('Email is required'),
+  password: yup.string().required('Password is required'),
+});
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Add your authentication API call here
-    navigate('/dashboard');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  // Only runs when the yup schema passes
+  const onSubmit = async ({ email }) => {
+    // TODO: replace with your real authentication API call, e.g.
+    // const { user, token } = await api.login({ email, password });
+    // Never store the password in localStorage — only the user info + token.
+    const user = { email };
+    const token = 'demo-token';
+
+    dispatch(loginSuccess({ user, token }));
+    navigate('/');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <span className="text-2xl font-bold tracking-wider text-indigo-600">
-          AppPanel
-        </span>
-        <h2 className="mt-4 text-2xl font-bold text-gray-900">
-          Sign in to your account
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Welcome back! Please enter your details.
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 border border-gray-200 rounded-xl shadow-xs sm:px-10">
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="mt-1.5 block w-full px-3.5 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Password
-                </label>
-                <a
-                  href="#forgot-password"
-                  className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
-                >
-                  Forgot password?
-                </a>
-              </div>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mt-1.5 block w-full px-3.5 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-              />
-              <label
-                htmlFor="remember-me"
-                className="ml-2 block text-sm text-gray-600"
-              >
-                Remember me for 30 days
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2.5 px-4 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition cursor-pointer"
-            >
-              Sign in
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Don&apos;t have an account?{' '}
-            <Link
-              to="/signup"
-              className="font-semibold text-indigo-600 hover:text-indigo-500"
-            >
-              Sign up
-            </Link>
-          </p>
+    <AuthShell
+      status="Satellite link active"
+      title="Sign in to mission control"
+      subtitle="Monitor your fields with satellite insights."
+      chips={['🛰️ Satellite imagery', '🌱 Crop health', '🌦️ Climate']}
+    >
+      <form
+        className="mt-7 space-y-5 login3d__z1"
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+      >
+        <div>
+          <label htmlFor="email" className="login3d__label">
+            Email address
+          </label>
+          <IconInput
+            icon="mail"
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'email-error' : undefined}
+            {...register('email')}
+          />
+          {errors.email && (
+            <p id="email-error" className="login3d__hint" role="alert">
+              {errors.email.message}
+            </p>
+          )}
         </div>
-      </div>
-    </div>
+
+        <div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="login3d__label">
+              Password
+            </label>
+            <a href="#forgot-password" className="login3d__link mb-1.5">
+              Forgot password?
+            </a>
+          </div>
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? 'password-error' : undefined}
+            {...register('password')}
+          />
+          {errors.password && (
+            <p id="password-error" className="login3d__hint" role="alert">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        <label htmlFor="remember-me" className="login3d__check">
+          <input id="remember-me" type="checkbox" />
+          Remember me for 30 days
+        </label>
+
+        <button type="submit" className="login3d__btn" disabled={isSubmitting}>
+          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+
+      <p className="login3d__footer login3d__z1">
+        Don&apos;t have an account?{' '}
+        <Link to="/signup" className="login3d__link" style={{ fontSize: '0.85rem' }}>
+          Sign up
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

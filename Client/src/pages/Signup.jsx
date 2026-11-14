@@ -1,5 +1,28 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AuthShell, { IconInput, PasswordInput } from '../components/AuthShell.jsx';
+import * as yup from 'yup'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+
+const signupSchema = yup.object().shape({
+  fullName: yup.string().required(),
+  email: yup.string().email().required(),
+  password: yup.string().required(),
+})
+
+const STRENGTH_LABELS = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
+
+// 0..4 score: length, mixed case, number, symbol
+function passwordScore(pw) {
+  if (!pw) return 0;
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return s;
+}
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -18,133 +41,101 @@ export default function Signup() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
     // Add your registration API call here
-    navigate('/dashboard');
+    navigate('/login');
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <span className="text-2xl font-bold tracking-wider text-indigo-600">
-          AppPanel
-        </span>
-        <h2 className="mt-4 text-2xl font-bold text-gray-900">
-          Create an account
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Get started with your free workspace today.
-        </p>
-      </div>
+  const score = passwordScore(formData.password);
+  const confirmMismatch =
+    formData.confirmPassword.length > 0 &&
+    formData.password !== formData.confirmPassword;
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 border border-gray-200 rounded-xl shadow-xs sm:px-10">
-          {error && (
-            <div className="mb-4 p-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
-              {error}
+  return (
+    <AuthShell
+      status="Ground station ready"
+      title="Join the mission"
+      subtitle="Create your account to get satellite insights for your farm."
+    >
+      {error && (
+        <div className="login3d__error login3d__z1" role="alert">
+          {error}
+        </div>
+      )}
+
+      <form className="mt-7 space-y-5 login3d__z1" onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="fullName" className="login3d__label">
+            Full name
+          </label>
+          <IconInput
+            icon="user"
+            id="fullName"
+            name="fullName"
+            type="text"
+            required
+            autoComplete="name"
+            value={formData.fullName}
+            onChange={handleChange}
+            placeholder="Alex Morgan"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="email" className="login3d__label">
+            Email address
+          </label>
+          <IconInput
+            icon="mail"
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="you@example.com"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className="login3d__label">
+            Password
+          </label>
+          <PasswordInput
+            id="password"
+            name="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Min. 8 characters"
+          />
+          {formData.password && (
+            <div className="login3d__strength" data-score={score}>
+              <div className="login3d__strength-bars" aria-hidden="true">
+                {[1, 2, 3, 4].map((n) => (
+                  <span key={n} className={n <= score ? 'is-on' : ''} />
+                ))}
+              </div>
+              <span className="login3d__strength-label">
+                {STRENGTH_LABELS[score]}
+              </span>
             </div>
           )}
-
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="fullName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Full name
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required
-                value={formData.fullName}
-                onChange={handleChange}
-                placeholder="Alex Morgan"
-                className="mt-1.5 block w-full px-3.5 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                className="mt-1.5 block w-full px-3.5 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={8}
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Min. 8 characters"
-                className="mt-1.5 block w-full px-3.5 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Confirm password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="mt-1.5 block w-full px-3.5 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2.5 px-4 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition cursor-pointer"
-            >
-              Create account
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              className="font-semibold text-indigo-600 hover:text-indigo-500"
-            >
-              Sign in
-            </Link>
-          </p>
         </div>
-      </div>
-    </div>
+
+        <button type="submit" className="login3d__btn">
+          🚀 Create account
+        </button>
+      </form>
+
+      <p className="login3d__footer login3d__z1">
+        Already have an account?{' '}
+        <Link to="/login" className="login3d__link" style={{ fontSize: '0.85rem' }}>
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
