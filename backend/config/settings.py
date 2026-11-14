@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     #ourapps
-    'api',
+    'api.apps.ApiConfig',
+    'crops.apps.CropsConfig',
+    'locations.apps.LocationsConfig',
 ]
 
 MIDDLEWARE = [
