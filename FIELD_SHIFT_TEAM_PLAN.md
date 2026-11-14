@@ -14,6 +14,13 @@ Working name: **FieldShift Planner** (rename freely)
 - Image dosage advice, fertilizer quantity calculator, pesticide advice and yield prediction are **out of scope** (safety and data reasons, see section 2).
 - Fixes: ET0 formula now includes the 0.408 conversion factor; duplicate section numbers fixed; SMAP record length noted.
 
+### v2.1 — after reading the official Challenge #06 guide
+- The guide lists an **"Interactive Agricultural Map: displays areas vulnerable to drought, heat stress and erosion"**. Added to MUST: NASA GIBS overlay layers + pins colored by worst alert (section 12, `Map`).
+- The guide asks teams to understand **Landsat vs SMAP vs GPM vs ECOSTRESS**. The About-the-data panel moved up to MUST and must explain all four (section 12).
+- Faisalabad pin moved from 31.4, 73.1 (built-up city: SoilGrids has no soil data) to **31.30, 73.00** (rural silt loam). Same POWER grid cell.
+- Guide page 3 ("What is the challenge asking?") describes a lunar outpost game: a copy-paste error in the guide. Ignore it.
+- Extra sources to cite (crop table, README): USDA NRCS *Conservation Crop Rotation* and *Cover Crops for Soil Health*, FAO *Climate-Smart Agriculture*.
+
 ---
 
 ## 0. Team and roles at a glance
@@ -82,6 +89,8 @@ Everyone: read sections 1 to 4, then your own section in 15.
 - **Alerts** with severity, trigger variables and preventive action (section 9).
 - Data tier + confidence label + disclaimer.
 - Glossary tooltips.
+- **Vulnerability map** (from the official guide): toggleable NASA GIBS layers (SMAP soil moisture, MODIS NDVI, MODIS land surface temperature, IMERG rain) + featured pins and the clicked point colored by their worst alert.
+- **About-the-data panel**: what Landsat, SMAP, GPM, ECOSTRESS, MODIS and POWER measure, which ones we use, and satellite vs ground.
 - Deployed on free tiers, with cached fallback for featured locations.
 
 ### SHOULD (after MUST works)
@@ -93,7 +102,6 @@ Everyone: read sections 1 to 4, then your own section in 15.
 - Constraint filters (water, equipment, market).
 - Month-by-year stress heatmap.
 - FAO GAEZ cross-check of crop suitability.
-- About-the-data panel (satellite vs ground).
 
 ### STRETCH (only if time)
 - **Voice** input and output (browser Web Speech API, English + Urdu). **VERIFY** Urdu support in the first hour.
@@ -315,7 +323,7 @@ A double-cropped year (cotton then wheat) is two steps in the same `year`. A cov
 | Slug | Name | Approx. lat, lon | Zone | Tier | Default current rotation |
 |---|---|---|---|---|---|
 | `sindh-hyderabad` | Sindh (Hyderabad area) | 25.4, 68.4 | subtropical | featured | cotton–wheat (confirm) |
-| `punjab-faisalabad` | Punjab (Faisalabad area) | 31.4, 73.1 | subtropical | featured | cotton–wheat or rice–wheat (confirm) |
+| `punjab-faisalabad` | Punjab (Faisalabad area, rural SW of city) | 31.30, 73.00 | subtropical | featured | cotton–wheat or rice–wheat (confirm) |
 | `iowa-central` | Central Iowa (Ames) | 42.0, -93.6 | temperate | us_enhanced | corn–soybean (confirm with CDL) |
 
 ---
@@ -601,7 +609,7 @@ The frontend keeps the message history and sends it each time (stateless server,
 ### Components
 | Component | Owner | Notes |
 |---|---|---|
-| `Map` (Leaflet) | Talha | Featured pins, click anywhere, selected-point marker |
+| `Map` (Leaflet) | Talha | Featured pins, click anywhere, selected-point marker. **Layer switcher with NASA GIBS WMTS tiles** (no key): SMAP soil moisture, MODIS NDVI, MODIS land surface temperature, IMERG precipitation, with a date picker and legend. Pins colored by worst alert severity (with a label, not color only). **VERIFY** GIBS layer names in the first hour (worldview.earthdata.nasa.gov shows them) |
 | `InputForm` | Talha | Rotation editor, 5 priority sliders, 3 constraint selects, soil override |
 | `ResultsLayout`, `StrategyCard` | Talha | 3 cards, score bars, contributions bar, 5 collapsible sections; shows baseline → scenario score change |
 | `DataBadge` | Talha | Tier, confidence, sources, "cached data" notice |
@@ -614,7 +622,7 @@ The frontend keeps the message history and sends it each time (stateless server,
 | `SoilMoistureNdviChart` | Musab | Featured locations only |
 | `ValidationPanel` | Musab | POWER vs PRISM, or "ground validation not available here" |
 | `AiAnswer` | Musab | Renders `points` with Observed / Estimated cause / Prediction badges |
-| `Glossary`, `Disclaimer`, `AboutData` | Musab | Tooltips, support-not-replace banner, satellite-vs-ground explainer |
+| `Glossary`, `Disclaimer`, `AboutData` | Musab | Tooltips, support-not-replace banner. `AboutData` (MUST): one plain paragraph each on **Landsat** (30 m land/vegetation since 1972), **MODIS** (daily 250 m–1 km vegetation, temperature), **SMAP** (soil moisture since 2015), **GPM/IMERG** (rainfall), **ECOSTRESS** (plant heat stress and evapotranspiration), **NASA POWER** (daily climate for any point); which ones we use; satellite vs ground |
 
 **Design rules:** plain farmer language; no jargon without a tooltip; color is never the only signal; big tap targets; loading and error states everywhere; Urdu text right-to-left with a readable Urdu font (for example Noto Nastaliq Urdu); every chart labels data as Historical or Simulated.
 
@@ -827,7 +835,7 @@ All seed commands must be **idempotent**.
 | 16–20 | QA on phone and laptop: 3 pins, 3 random points, What-If extremes, Urdu chat. Check every number against the API. |
 | 20–22 | README, slides, demo video (backend team writes its sections). |
 
-**Cut order if behind:** `StressHeatmap` → `SoilMoistureNdviChart` → `AboutData`. Never cut: map, form, cards, timeline, What-If, alerts, disclaimer.
+**Cut order if behind:** `StressHeatmap` → `SoilMoistureNdviChart`. Never cut: map (with GIBS layers), form, cards, timeline, What-If, alerts, `AboutData`, disclaimer.
 
 ### Demo script (about 4 minutes)
 1. The problem: shifting climate, water stress, soil decline, hard rotation choices.

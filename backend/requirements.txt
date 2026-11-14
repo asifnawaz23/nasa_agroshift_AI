@@ -1,8 +1,15 @@
-
+# Web / API (Shayan)
 Django>=5.2,<6.1
 djangorestframework>=3.16,<4.0
 django-cors-headers>=4.7,<5.0
 psycopg[binary]>=3.2,<4.0
 python-dotenv>=1.1,<2.0
-requests>=2.32,<3.0
 gunicorn>=23.0,<24.0
+
+# Data sources + engine (Aman, Asif, Abdul Rehman)
+requests>=2.32,<3.0
+pandas>=2.2
+numpy>=2.0
+
+# Tests
+pytest>=8.0
