@@ -6,6 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../features/auth/authSlice.js';
 
+
 const loginSchema = yup.object().shape({
   email: yup.string().email('Invalid email address').required('Email is required'),
   password: yup.string().required('Password is required'),
