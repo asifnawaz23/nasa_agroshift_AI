@@ -705,10 +705,11 @@
 
 
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { getCrops } from "../services/api";
 
 /*
   Simple farmer input form.
@@ -781,7 +782,11 @@ function toApiPayload(data) {
   return {
     lat: data.location.latitude,
     lon: data.location.longitude,
-    current_rotation: [data.currentCrop],
+    // The backend expects { cycle_years, steps: [...] } or null.
+    // null = use the typical rotation for this climate zone.
+    current_rotation: null,
+    // Extra info for the backend team (currently ignored by /api/analyze/)
+    current_crop: data.currentCrop,
     priorities,
     constraints: {
       water_availability: data.waterAvailability,
@@ -807,6 +812,15 @@ export default function FarmerInputForm({ location, onSubmit }) {
     resolver: yupResolver(inputSchema),
     defaultValues,
   });
+
+  // GET /api/crops/ -> options for the "Current crop" dropdown
+  const [crops, setCrops] = useState([]);
+  const [cropsError, setCropsError] = useState(false);
+  useEffect(() => {
+    getCrops()
+      .then((data) => setCrops(data.results ?? []))
+      .catch(() => setCropsError(true)); // fall back to a text box
+  }, []);
 
   // When a location is picked on the map, put it into the form
   useEffect(() => {
@@ -887,13 +901,29 @@ export default function FarmerInputForm({ location, onSubmit }) {
           <label htmlFor="currentCrop" className={labelClass}>
             Current crop
           </label>
-          <input
-            id="currentCrop"
-            placeholder="e.g. Wheat"
-            className={inputClass}
-            aria-invalid={!!errors.currentCrop}
-            {...register("currentCrop")}
-          />
+          {crops.length > 0 ? (
+            <select
+              id="currentCrop"
+              className={inputClass}
+              aria-invalid={!!errors.currentCrop}
+              {...register("currentCrop")}
+            >
+              <option value="">Select a crop…</option>
+              {crops.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="currentCrop"
+              placeholder={cropsError ? "e.g. Wheat" : "Loading crops…"}
+              className={inputClass}
+              aria-invalid={!!errors.currentCrop}
+              {...register("currentCrop")}
+            />
+          )}
           {errors.currentCrop && <p className={errorClass}>{errors.currentCrop.message}</p>}
         </div>
 

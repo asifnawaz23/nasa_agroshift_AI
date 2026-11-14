@@ -1,19 +1,32 @@
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSelector } from 'react-redux';
+import { getMe } from '../services/api';
 
 /*
-  Shows the logged-in user's info from Redux (state.auth).
+  Shows the logged-in user's info.
+  Starts with what Redux has (state.auth), then refreshes it from GET /api/auth/me/.
   Props:
     open    – show the modal?
     onClose – close it
 */
 export default function ProfileModal({ open, onClose }) {
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { user: storedUser, isAuthenticated } = useSelector((state) => state.auth);
+  const [freshUser, setFreshUser] = useState(null);
+
+  useEffect(() => {
+    if (!open) return;
+    getMe()
+      .then((data) => setFreshUser(data.user))
+      .catch(() => setFreshUser(null)); // keep showing the stored user
+  }, [open]);
 
   if (!open) return null;
 
+  const user = freshUser ?? storedUser;
   const email = user?.email ?? 'Unknown';
-  const name = user?.name ?? email.split('@')[0];
+  const name = user?.full_name || user?.name || email.split('@')[0];
+  const joined = user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : null;
 
   // Portal: render on <body> so no parent styles can trap the overlay
   return createPortal(
@@ -45,6 +58,12 @@ export default function ProfileModal({ open, onClose }) {
             <dt className="text-gray-500">Email</dt>
             <dd className="font-medium text-gray-900">{email}</dd>
           </div>
+          {joined && (
+            <div className="flex justify-between py-2.5">
+              <dt className="text-gray-500">Member since</dt>
+              <dd className="font-medium text-gray-900">{joined}</dd>
+            </div>
+          )}
           <div className="flex justify-between py-2.5">
             <dt className="text-gray-500">Status</dt>
             <dd className={isAuthenticated ? 'font-medium text-green-700' : 'font-medium text-gray-500'}>

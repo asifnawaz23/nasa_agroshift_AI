@@ -18,6 +18,10 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from backend/.env first, then the project-root .env.
+# load_dotenv never overrides a value that is already set, so backend/.env wins,
+# and real environment variables (e.g. on a hosting server) win over both.
+load_dotenv(BASE_DIR / ".env")
 load_dotenv(BASE_DIR.parent / ".env")
 
 

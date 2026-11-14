@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { logout } from '../features/auth/authSlice';
 import mainLogo from '../assets/mainLogo.jpg';
 import { NAV_ITEMS, icon } from './navItems';
+import { logout as logoutApi } from '../services/api';
 
 /*
   Dashboard sidebar.
@@ -30,7 +31,12 @@ export default function Sidebar({
   // On desktop, hide text when minimized. The mobile drawer always shows everything.
   const hideWhenMin = collapsed ? 'lg:hidden' : '';
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutApi(); // POST /api/auth/logout/ — deletes the token on the server
+    } catch {
+      /* still log out locally if the server is unreachable */
+    }
     dispatch(logout());
     navigate('/');
   };

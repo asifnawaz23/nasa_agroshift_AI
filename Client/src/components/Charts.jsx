@@ -69,7 +69,7 @@ function Legend({ strategies }) {
 
 function Delta({ value, baseline }) {
   if (baseline == null) return <span className="text-gray-400">baseline</span>;
-  const diff = value - baseline;
+  const diff = Math.round((value - baseline) * 10) / 10; // avoid 1.7000000000000028
   if (diff === 0) return <span className="text-gray-500">no change</span>;
   return (
     <span className={diff > 0 ? 'text-emerald-700' : 'text-rose-700'}>

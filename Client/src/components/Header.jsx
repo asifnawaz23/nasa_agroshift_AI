@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import ProfileModal from './ProfileModal';
+import { getHealth } from '../services/api';
 
 /*
   Dashboard top bar.
@@ -11,6 +12,18 @@ import ProfileModal from './ProfileModal';
 export default function Header({ title, onMenuClick }) {
   const email = useSelector((s) => s.auth.user?.email) ?? 'farmer';
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // GET /api/health/ -> is the backend reachable? (re-checked every 30 s)
+  const [online, setOnline] = useState(null); // null = checking
+  useEffect(() => {
+    const check = () =>
+      getHealth()
+        .then(() => setOnline(true))
+        .catch(() => setOnline(false));
+    check();
+    const id = setInterval(check, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between gap-4 h-16 px-4 sm:px-8 bg-white/75 backdrop-blur-xl border-b border-slate-200/70">
@@ -32,9 +45,22 @@ export default function Header({ title, onMenuClick }) {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
-          <span className="dash-ping w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          Live Earth data
+        <div
+          className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${
+            online === false
+              ? 'bg-red-50 border-red-200 text-red-700'
+              : online
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                : 'bg-slate-50 border-slate-200 text-slate-500'
+          }`}
+          title={online === false ? 'Backend not reachable — run python manage.py runserver' : undefined}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              online === false ? 'bg-red-500' : online ? 'dash-ping bg-emerald-500' : 'bg-slate-400'
+            }`}
+          />
+          {online === false ? 'Backend offline' : online ? 'Live Earth data' : 'Connecting…'}
         </div>
         <div className="relative hidden sm:block">
           <svg viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
