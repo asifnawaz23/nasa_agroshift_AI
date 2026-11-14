@@ -1,2 +1,10 @@
 # Endpoint will come here
 VITE_API_URL=""
+
+# PostgreSQL Database Configuration
+
+DB_NAME=fieldshift_db
+DB_USER=fieldshift_user
+DB_PASSWORD=
+DB_HOST=localhost
+DB_PORT=5432

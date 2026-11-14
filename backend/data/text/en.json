@@ -1,0 +1,80 @@
+{
+  "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+  "list_and": "and",
+  "alerts": {
+    "severity": {"low": "Low", "moderate": "Moderate", "high": "High", "critical": "Critical"},
+    "reason": {
+      "heat": "{month}: {crop} at the {stage} stage, while this area averages {value} days above {threshold} °C.",
+      "drought": "In {value}% of past years, {month} had a dry spell of 10+ days ({crop}, {stage} stage).",
+      "water_deficit": "{month}: rain falls about {value} mm short of what the crops lose to evaporation ({crop}, {stage} stage).",
+      "frost": "{month}: about {value} frost days on average ({crop}, {stage} stage).",
+      "waterlogging": "{month}: about {value} heavy-rain days on average, and this soil drains slowly ({crop}, {stage} stage).",
+      "soil_drying": "{month}: soil moisture has been below normal in recent years, {value} standard deviations ({crop}, {stage} stage)."
+    },
+    "action": {
+      "heat": "Consider earlier sowing or a more heat-tolerant variety so the {stage} stage avoids {month}. Ask your extension office.",
+      "drought": "Keep crop residue or mulch on the soil to hold moisture, and plan a backup irrigation if you can.",
+      "water_deficit": "Plan about {value} mm of irrigation for {month}, or consider a crop that needs less water.",
+      "frost": "Shift the sowing date so the {stage} stage misses {month}, or choose a frost-tolerant variety.",
+      "waterlogging": "Use raised beds or drainage channels, and avoid sowing just before the heavy-rain season.",
+      "soil_drying": "Keep residue on the field and check soil moisture before deciding to irrigate."
+    }
+  },
+  "why": {
+    "current": "This is what is farmed here today. It is the baseline the other options are compared with.",
+    "current_alt_rice_wheat": "This is a common rotation in central Punjab. It is the baseline the other options are compared with.",
+    "water_saver": "Suggested to lower the farm's water demand: it uses crops that need less water or handle drought better.",
+    "soil_builder": "Suggested to rebuild the soil: it adds nitrogen-fixing legumes, more ground cover and more crop families.",
+    "custom": "A rotation you entered.",
+    "water_change_less": "It needs about {pct}% less water per year than your current rotation ({new} mm instead of {old} mm).",
+    "water_change_more": "It needs about {pct}% more water per year than your current rotation ({new} mm instead of {old} mm).",
+    "cover_change": "The field is bare about {months} fewer months per year."
+  },
+  "evidence": {
+    "heat": "{month}: {crop} at the {stage} stage, while this area averages {days} days above {threshold} °C.",
+    "deficit": "{month} is a water-critical month for {crop}, but rain ({precip} mm) is far below evaporation demand ({et0} mm): a gap of {deficit} mm to cover by irrigation or stored soil water.",
+    "dry_spell": "In {pct}% of the last {years} years, {month} had a dry spell of 10+ days during the {stage} stage of {crop}.",
+    "frost": "{month}: {crop} at the {stage} stage, with about {days} frost days in this area.",
+    "erosion_bare": "The field is bare in {months}, when heavy-rain days still happen (about {days} per year). Bare soil in heavy rain washes away.",
+    "drought_years": "Recent drought years in the 20-year record: {years}.",
+    "sm_dry": "Soil moisture in {month} has been below normal in recent years ({z} standard deviations).",
+    "low_om": "Soil organic matter is low (about {om}%). Legumes, cover crops and crop residue help raise it.",
+    "high_erodibility": "The soil is {texture} with a lot of silt, which washes away easily when bare.",
+    "stage": {
+      "flowering": "flowering", "grain_fill": "grain filling", "pod_fill": "pod filling", "heading": "heading",
+      "flowering_boll_set": "flowering and boll setting", "flowering_pod_fill": "flowering and pod filling",
+      "establishment": "establishment", "jointing": "jointing", "tillering": "tillering",
+      "cutting_season": "cutting season", "vegetative": "vegetative", "maturity": "maturity"
+    }
+  },
+  "benefits": {
+    "familiar": "Familiar crops, equipment and markets: no new skills or buyers needed.",
+    "n_fixing": "Nitrogen-fixing crops ({crops}) take nitrogen from the air, so the next crop needs less fertilizer.",
+    "cover": "Cover crops ({crops}) protect the soil between main crops from heavy rain and wind.",
+    "deep_roots": "Deep-rooted crops ({crops}) open the soil so rain soaks in instead of running off.",
+    "families": "{n} different crop families break pest and disease cycles (your current rotation has {current}).",
+    "drought_tolerant": "Drought-tolerant crops ({crops}) handle dry spells better than the crops they replace.",
+    "forage": "Fodder crops ({crops}) can feed animals or bring extra income."
+  },
+  "info_gaps": {
+    "tier_standard": "Based on NASA POWER climate data for a ~50 km area. No satellite soil-moisture or vegetation data was loaded for this exact point.",
+    "tier_featured": "Satellite soil moisture (SMAP, 9 km) and vegetation (MODIS NDVI, 250 m) describe the area, not your individual field.",
+    "tier_us_enhanced": "Ground data (PRISM weather, SSURGO soil, CDL crop history) is used, but there is no soil test from this field.",
+    "smap_short": "Satellite soil moisture only exists since 2015 ({years} years), so 'normal' is based on a short record.",
+    "income": "Income values are rough regional placeholders, not local prices.",
+    "calendar_approx": "Sowing and harvest months are typical regional values and may differ on your farm.",
+    "no_soil": "Soil data is not available for this point, so soil effects are estimated with less certainty.",
+    "ndvi_mismatch": "Satellites saw low vegetation in {observed}, but this rotation expects bare soil in {expected}. Your real calendar may differ from the template.",
+    "scenario": "These results use a What-If scenario ({temp} °C, {rain}% rain), not observed weather."
+  },
+  "local_review": {
+    "soil_test": "Get a soil test (nutrients, organic matter, salinity) before changing the rotation.",
+    "planting_dates": "Confirm sowing and harvest dates with your local agriculture extension office.",
+    "market": "Check that there are buyers or a use for {crops} near you.",
+    "equipment": "{crops} may need extra equipment or labour (for example haying, puddling or transplanting).",
+    "rice_water": "Rice needs a lot of water: confirm canal or tubewell supply for the whole season.",
+    "pest_history": "Ask about local pest and disease history for the new crops ({crops}).",
+    "drainage": "This soil drains slowly: check for waterlogging before sowing {crops}.",
+    "irrigation": "Rain covers only part of the crop water need here: confirm how much irrigation water you can count on."
+  }
+}

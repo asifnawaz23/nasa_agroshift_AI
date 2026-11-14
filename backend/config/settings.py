@@ -44,9 +44,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #thirdpartyapps
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     #ourapps
-    'api',
+    'api.apps.ApiConfig',
+    'crops.apps.CropsConfig',
+    'locations.apps.LocationsConfig',
+    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
@@ -134,9 +138,13 @@ STATIC_URL = 'static/'
 
 # Django REST Framework configuration
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
+    "EXCEPTION_HANDLER": "accounts.exceptions.api_exception_handler",
 }
 
 # React frontend development server

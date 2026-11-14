@@ -1,0 +1,131 @@
+{
+  "_notes": [
+    "Months are 1-12. A harvest month smaller than the sow month means harvest is in the next calendar year.",
+    "growth_stages use months after typical_sow_month; the last stage ends at the season length = (typical_harvest_month - typical_sow_month) mod 12.",
+    "sensitive lists the stresses that hurt most in that stage (heat, drought, frost, waterlogging). Used by scoring and alerts.",
+    "If a rotation step uses different sow/harvest months, scoring stretches the stages proportionally.",
+    "Subtropical calendars are typical for Sindh and Punjab and are APPROXIMATE: confirm locally (Abdul Rehman)."
+  ],
+  "calendars": [
+    {"crop": "maize", "zone": "temperate", "season_label": "main", "sow_months": [4, 5], "harvest_months": [9, 10], "typical_sow_month": 5, "typical_harvest_month": 10,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "vegetative", "start": 1, "end": 2},
+       {"stage": "flowering", "start": 2, "end": 3, "sensitive": ["heat", "drought"]},
+       {"stage": "grain_fill", "start": 3, "end": 4, "sensitive": ["drought"]},
+       {"stage": "maturity", "start": 4, "end": 5}]},
+
+    {"crop": "soybean", "zone": "temperate", "season_label": "main", "sow_months": [5, 6], "harvest_months": [9, 10], "typical_sow_month": 5, "typical_harvest_month": 10,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "vegetative", "start": 1, "end": 2},
+       {"stage": "flowering", "start": 2, "end": 3, "sensitive": ["heat", "drought"]},
+       {"stage": "pod_fill", "start": 3, "end": 4, "sensitive": ["drought"]},
+       {"stage": "maturity", "start": 4, "end": 5}]},
+
+    {"crop": "oats", "zone": "temperate", "season_label": "spring", "sow_months": [3, 4], "harvest_months": [7], "typical_sow_month": 4, "typical_harvest_month": 7,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "tillering", "start": 1, "end": 2},
+       {"stage": "heading", "start": 2, "end": 3, "sensitive": ["heat", "drought"]}]},
+
+    {"crop": "wheat", "zone": "temperate", "season_label": "winter", "sow_months": [9, 10], "harvest_months": [6, 7], "typical_sow_month": 10, "typical_harvest_month": 7,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 2},
+       {"stage": "winter_dormancy", "start": 2, "end": 6},
+       {"stage": "jointing", "start": 6, "end": 7, "sensitive": ["frost"]},
+       {"stage": "heading", "start": 7, "end": 8, "sensitive": ["heat", "drought"]},
+       {"stage": "grain_fill", "start": 8, "end": 9, "sensitive": ["heat"]}]},
+
+    {"crop": "alfalfa", "zone": "temperate", "season_label": "perennial", "sow_months": [4], "harvest_months": [6, 7, 8, 9], "typical_sow_month": 4, "typical_harvest_month": 10,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 2, "sensitive": ["drought"]},
+       {"stage": "cutting_season", "start": 2, "end": 6}]},
+
+    {"crop": "cereal_rye", "zone": "temperate", "season_label": "winter_cover", "sow_months": [9, 10], "harvest_months": [4, 5], "typical_sow_month": 10, "typical_harvest_month": 5,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 2},
+       {"stage": "winter_dormancy", "start": 2, "end": 5},
+       {"stage": "spring_growth", "start": 5, "end": 7}]},
+
+    {"crop": "red_clover", "zone": "temperate", "season_label": "cover", "sow_months": [3, 4], "harvest_months": [9, 10], "typical_sow_month": 4, "typical_harvest_month": 10,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 2, "sensitive": ["drought"]},
+       {"stage": "growth", "start": 2, "end": 6}]},
+
+    {"crop": "sorghum", "zone": "temperate", "season_label": "main", "sow_months": [5, 6], "harvest_months": [9, 10], "typical_sow_month": 5, "typical_harvest_month": 10,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "vegetative", "start": 1, "end": 2},
+       {"stage": "flowering", "start": 2, "end": 3, "sensitive": ["drought"]},
+       {"stage": "grain_fill", "start": 3, "end": 5}]},
+
+    {"crop": "wheat", "zone": "subtropical", "season_label": "rabi", "sow_months": [11], "harvest_months": [4], "typical_sow_month": 11, "typical_harvest_month": 4,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "tillering", "start": 1, "end": 3, "sensitive": ["frost"]},
+       {"stage": "heading", "start": 3, "end": 4, "sensitive": ["heat"]},
+       {"stage": "grain_fill", "start": 4, "end": 5, "sensitive": ["heat", "drought"]}]},
+
+    {"crop": "cotton", "zone": "subtropical", "season_label": "kharif", "sow_months": [4, 5], "harvest_months": [10, 11], "typical_sow_month": 5, "typical_harvest_month": 11,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "vegetative", "start": 1, "end": 2},
+       {"stage": "flowering_boll_set", "start": 2, "end": 4, "sensitive": ["heat", "drought", "waterlogging"]},
+       {"stage": "boll_opening", "start": 4, "end": 6}]},
+
+    {"crop": "rice", "zone": "subtropical", "season_label": "kharif", "sow_months": [6, 7], "harvest_months": [10, 11], "typical_sow_month": 7, "typical_harvest_month": 11,
+     "growth_stages": [
+       {"stage": "transplant_establishment", "start": 0, "end": 1},
+       {"stage": "tillering", "start": 1, "end": 2, "sensitive": ["drought"]},
+       {"stage": "flowering", "start": 2, "end": 3, "sensitive": ["heat", "drought"]},
+       {"stage": "grain_fill", "start": 3, "end": 4}]},
+
+    {"crop": "maize", "zone": "subtropical", "season_label": "kharif", "sow_months": [7, 8], "harvest_months": [10, 11], "typical_sow_month": 7, "typical_harvest_month": 11,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1, "sensitive": ["waterlogging"]},
+       {"stage": "vegetative", "start": 1, "end": 2},
+       {"stage": "flowering", "start": 2, "end": 3, "sensitive": ["heat", "drought"]},
+       {"stage": "grain_fill", "start": 3, "end": 4, "sensitive": ["drought"]}]},
+
+    {"crop": "chickpea", "zone": "subtropical", "season_label": "rabi", "sow_months": [10, 11], "harvest_months": [3, 4], "typical_sow_month": 11, "typical_harvest_month": 4,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "vegetative", "start": 1, "end": 3},
+       {"stage": "flowering", "start": 3, "end": 4, "sensitive": ["frost", "heat"]},
+       {"stage": "pod_fill", "start": 4, "end": 5, "sensitive": ["heat", "drought"]}]},
+
+    {"crop": "mungbean", "zone": "subtropical", "season_label": "spring_summer", "sow_months": [3, 4], "harvest_months": [6], "typical_sow_month": 4, "typical_harvest_month": 6,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "flowering_pod_fill", "start": 1, "end": 2, "sensitive": ["heat", "drought"]}]},
+
+    {"crop": "berseem", "zone": "subtropical", "season_label": "rabi", "sow_months": [10, 11], "harvest_months": [12, 1, 2, 3, 4], "typical_sow_month": 10, "typical_harvest_month": 4,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 2},
+       {"stage": "cutting_season", "start": 2, "end": 6, "sensitive": ["frost"]}]},
+
+    {"crop": "mustard", "zone": "subtropical", "season_label": "rabi", "sow_months": [10], "harvest_months": [2, 3], "typical_sow_month": 10, "typical_harvest_month": 3,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "vegetative", "start": 1, "end": 3},
+       {"stage": "flowering", "start": 3, "end": 4, "sensitive": ["frost"]},
+       {"stage": "pod_fill", "start": 4, "end": 5, "sensitive": ["heat"]}]},
+
+    {"crop": "sorghum", "zone": "subtropical", "season_label": "kharif", "sow_months": [6, 7], "harvest_months": [9, 10], "typical_sow_month": 7, "typical_harvest_month": 10,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "vegetative", "start": 1, "end": 2},
+       {"stage": "flowering", "start": 2, "end": 3, "sensitive": ["drought"]}]},
+
+    {"crop": "oats", "zone": "subtropical", "season_label": "rabi_fodder", "sow_months": [10, 11], "harvest_months": [2, 3], "typical_sow_month": 11, "typical_harvest_month": 3,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 1},
+       {"stage": "growth_cuts", "start": 1, "end": 4}]},
+
+    {"crop": "alfalfa", "zone": "subtropical", "season_label": "perennial", "sow_months": [10, 11], "harvest_months": [12, 1, 2, 3, 4, 5, 6, 7, 8, 9], "typical_sow_month": 10, "typical_harvest_month": 9,
+     "growth_stages": [
+       {"stage": "establishment", "start": 0, "end": 2},
+       {"stage": "cutting_season", "start": 2, "end": 11, "sensitive": ["waterlogging"]}]}
+  ]
+}
