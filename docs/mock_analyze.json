@@ -1,123 +1,1301 @@
-
 {
-  "analysis_id": "mock-analysis-001",
+  "analysis_id": "mock-iowa-hot-dry",
   "location": {
-    "lat": 42.0,
-    "lon": -93.6,
-    "name": "Central Iowa",
-    "country": "United States",
-    "zone": "Temperate"
+    "lat": 42.1,
+    "lon": -93.45,
+    "name": "Central Iowa (near Ames)",
+    "country": "US",
+    "zone": "temperate",
+    "featured": true,
+    "slug": "iowa-central"
   },
   "data_quality": {
-    "status": "mock",
-    "tier": "featured",
+    "status": "complete",
+    "confidence": "medium",
+    "fallback_used": false,
+    "tier": "us_enhanced",
     "sources": [
       "NASA POWER",
       "SoilGrids",
-      "SMAP",
-      "MODIS NDVI"
+      "NDVI"
     ],
-    "warnings": [
-      "This is illustrative mock data for frontend development."
-    ]
+    "warnings": [],
+    "years_covered": [
+      2006,
+      2025
+    ],
+    "n_years": 20,
+    "missing_fraction": 0.0,
+    "climate_cache": {
+      "grid_key": "42.0_-93.5",
+      "cache_hit": true,
+      "fallback_used": false,
+      "fetched_at": "2026-11-15T00:00:00+00:00"
+    },
+    "soil_cache": {
+      "grid_key": "42.10_-93.45",
+      "cache_hit": true,
+      "fallback_used": false,
+      "fetched_at": "2026-11-15T00:00:00+00:00",
+      "error": null
+    }
   },
   "climate": {
     "baseline": {
-      "annual_rainfall_mm": 850,
-      "average_temperature_c": 10.5
+      "annual_rainfall_mm": 860.4,
+      "average_temperature_c": 9.7,
+      "years_covered": [
+        2006,
+        2025
+      ],
+      "monthly": [
+        {
+          "month": 1,
+          "t_mean": -6.5,
+          "t_max": -1.8,
+          "t_min": -11.0,
+          "precip_mm": 23.8,
+          "et0_mm": 13.7,
+          "deficit_mm": 0.0,
+          "root_wetness": 0.52,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 30.4,
+          "dry_spell_prob": 0.9,
+          "extreme_rain_days": 0.0,
+          "soil_moisture_anomaly": -0.71,
+          "ndvi": 0.21
+        },
+        {
+          "month": 2,
+          "t_mean": -4.8,
+          "t_max": 0.8,
+          "t_min": -9.9,
+          "precip_mm": 25.7,
+          "et0_mm": 21.9,
+          "deficit_mm": 0.0,
+          "root_wetness": 0.53,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 27.3,
+          "dry_spell_prob": 0.95,
+          "extreme_rain_days": 0.1,
+          "soil_moisture_anomaly": -0.69,
+          "ndvi": 0.21
+        },
+        {
+          "month": 3,
+          "t_mean": 3.3,
+          "t_max": 9.5,
+          "t_min": -2.3,
+          "precip_mm": 51.6,
+          "et0_mm": 56.7,
+          "deficit_mm": 5.1,
+          "root_wetness": 0.54,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 22.6,
+          "dry_spell_prob": 0.75,
+          "extreme_rain_days": 0.2,
+          "soil_moisture_anomaly": -0.66,
+          "ndvi": 0.22
+        },
+        {
+          "month": 4,
+          "t_mean": 9.5,
+          "t_max": 16.0,
+          "t_min": 3.1,
+          "precip_mm": 86.5,
+          "et0_mm": 94.3,
+          "deficit_mm": 7.8,
+          "root_wetness": 0.55,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 8.9,
+          "dry_spell_prob": 0.35,
+          "extreme_rain_days": 0.6,
+          "soil_moisture_anomaly": -0.85,
+          "ndvi": 0.24
+        },
+        {
+          "month": 5,
+          "t_mean": 16.3,
+          "t_max": 22.2,
+          "t_min": 10.2,
+          "precip_mm": 111.8,
+          "et0_mm": 135.4,
+          "deficit_mm": 23.6,
+          "root_wetness": 0.55,
+          "heat_days": 0.1,
+          "severe_heat_days": 0.0,
+          "frost_days": 0.2,
+          "dry_spell_prob": 0.3,
+          "extreme_rain_days": 0.7,
+          "soil_moisture_anomaly": -0.88,
+          "ndvi": 0.3
+        },
+        {
+          "month": 6,
+          "t_mean": 22.3,
+          "t_max": 27.7,
+          "t_min": 16.4,
+          "precip_mm": 130.5,
+          "et0_mm": 157.0,
+          "deficit_mm": 26.5,
+          "root_wetness": 0.52,
+          "heat_days": 0.3,
+          "severe_heat_days": 0.1,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.2,
+          "extreme_rain_days": 0.9,
+          "soil_moisture_anomaly": -0.73,
+          "ndvi": 0.68
+        },
+        {
+          "month": 7,
+          "t_mean": 24.3,
+          "t_max": 29.6,
+          "t_min": 18.6,
+          "precip_mm": 97.0,
+          "et0_mm": 163.4,
+          "deficit_mm": 66.4,
+          "root_wetness": 0.48,
+          "heat_days": 2.6,
+          "severe_heat_days": 0.2,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.35,
+          "extreme_rain_days": 0.8,
+          "soil_moisture_anomaly": -0.46,
+          "ndvi": 0.89
+        },
+        {
+          "month": 8,
+          "t_mean": 23.1,
+          "t_max": 28.9,
+          "t_min": 17.4,
+          "precip_mm": 108.4,
+          "et0_mm": 143.2,
+          "deficit_mm": 34.8,
+          "root_wetness": 0.45,
+          "heat_days": 1.7,
+          "severe_heat_days": 0.0,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.35,
+          "extreme_rain_days": 0.9,
+          "soil_moisture_anomaly": -0.34,
+          "ndvi": 0.84
+        },
+        {
+          "month": 9,
+          "t_mean": 18.9,
+          "t_max": 25.3,
+          "t_min": 12.9,
+          "precip_mm": 77.0,
+          "et0_mm": 104.8,
+          "deficit_mm": 27.8,
+          "root_wetness": 0.45,
+          "heat_days": 0.4,
+          "severe_heat_days": 0.0,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.7,
+          "extreme_rain_days": 0.3,
+          "soil_moisture_anomaly": -0.66,
+          "ndvi": 0.42
+        },
+        {
+          "month": 10,
+          "t_mean": 10.9,
+          "t_max": 17.3,
+          "t_min": 5.3,
+          "precip_mm": 71.6,
+          "et0_mm": 61.2,
+          "deficit_mm": 0.0,
+          "root_wetness": 0.47,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 5.0,
+          "dry_spell_prob": 0.9,
+          "extreme_rain_days": 0.6,
+          "soil_moisture_anomaly": -0.88,
+          "ndvi": 0.25
+        },
+        {
+          "month": 11,
+          "t_mean": 3.1,
+          "t_max": 8.8,
+          "t_min": -1.5,
+          "precip_mm": 37.2,
+          "et0_mm": 28.9,
+          "deficit_mm": 0.0,
+          "root_wetness": 0.49,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 19.1,
+          "dry_spell_prob": 0.9,
+          "extreme_rain_days": 0.1,
+          "soil_moisture_anomaly": -0.69,
+          "ndvi": 0.23
+        },
+        {
+          "month": 12,
+          "t_mean": -3.5,
+          "t_max": 1.0,
+          "t_min": -7.6,
+          "precip_mm": 39.3,
+          "et0_mm": 14.8,
+          "deficit_mm": 0.0,
+          "root_wetness": 0.5,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 29.0,
+          "dry_spell_prob": 0.85,
+          "extreme_rain_days": 0.1,
+          "soil_moisture_anomaly": -0.77,
+          "ndvi": 0.22
+        }
+      ],
+      "trends": {
+        "precip_mm_per_decade": -100.1,
+        "t_mean_c_per_decade": 0.71,
+        "precip_trend_significant": false,
+        "t_mean_trend_significant": false
+      },
+      "year_stress_flags": {
+        "2006": [
+          "heat"
+        ],
+        "2012": [
+          "drought",
+          "heat"
+        ],
+        "2020": [
+          "drought"
+        ],
+        "2021": [
+          "heat"
+        ],
+        "2022": [
+          "drought"
+        ],
+        "2023": [
+          "drought",
+          "heat"
+        ]
+      },
+      "frost_free_season": {
+        "median_days": 176,
+        "p10": 166,
+        "p90": 203
+      },
+      "soil_moisture_source": "power_root_wetness",
+      "bare_months_observed": [
+        1,
+        2,
+        3,
+        4,
+        11,
+        12
+      ],
+      "basis": "historical"
     },
     "scenario": {
-      "rain_pct": 0,
-      "temp_c": 0,
-      "annual_rainfall_mm": 850,
-      "average_temperature_c": 10.5
+      "rain_pct": -30.0,
+      "temp_c": 3.0,
+      "annual_rainfall_mm": 602.0,
+      "average_temperature_c": 12.7,
+      "years_covered": [
+        2006,
+        2025
+      ],
+      "monthly": [
+        {
+          "month": 1,
+          "t_mean": -3.5,
+          "t_max": 1.2,
+          "t_min": -8.0,
+          "precip_mm": 16.6,
+          "et0_mm": 17.2,
+          "deficit_mm": 0.5,
+          "root_wetness": 0.51,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 27.2,
+          "dry_spell_prob": 1.0,
+          "extreme_rain_days": 0.0,
+          "soil_moisture_anomaly": -0.89,
+          "ndvi": 0.21
+        },
+        {
+          "month": 2,
+          "t_mean": -1.8,
+          "t_max": 3.8,
+          "t_min": -6.9,
+          "precip_mm": 18.0,
+          "et0_mm": 26.8,
+          "deficit_mm": 8.8,
+          "root_wetness": 0.52,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 23.6,
+          "dry_spell_prob": 0.95,
+          "extreme_rain_days": 0.0,
+          "soil_moisture_anomaly": -0.83,
+          "ndvi": 0.21
+        },
+        {
+          "month": 3,
+          "t_mean": 6.3,
+          "t_max": 12.5,
+          "t_min": 0.7,
+          "precip_mm": 36.1,
+          "et0_mm": 64.6,
+          "deficit_mm": 28.5,
+          "root_wetness": 0.52,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 13.8,
+          "dry_spell_prob": 0.8,
+          "extreme_rain_days": 0.0,
+          "soil_moisture_anomaly": -1.02,
+          "ndvi": 0.22
+        },
+        {
+          "month": 4,
+          "t_mean": 12.5,
+          "t_max": 19.0,
+          "t_min": 6.1,
+          "precip_mm": 60.5,
+          "et0_mm": 104.5,
+          "deficit_mm": 43.9,
+          "root_wetness": 0.51,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 3.5,
+          "dry_spell_prob": 0.4,
+          "extreme_rain_days": 0.3,
+          "soil_moisture_anomaly": -1.34,
+          "ndvi": 0.24
+        },
+        {
+          "month": 5,
+          "t_mean": 19.3,
+          "t_max": 25.2,
+          "t_min": 13.2,
+          "precip_mm": 78.2,
+          "et0_mm": 147.3,
+          "deficit_mm": 69.0,
+          "root_wetness": 0.5,
+          "heat_days": 0.3,
+          "severe_heat_days": 0.0,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.4,
+          "extreme_rain_days": 0.3,
+          "soil_moisture_anomaly": -1.58,
+          "ndvi": 0.3
+        },
+        {
+          "month": 6,
+          "t_mean": 25.3,
+          "t_max": 30.7,
+          "t_min": 19.4,
+          "precip_mm": 91.3,
+          "et0_mm": 168.7,
+          "deficit_mm": 77.4,
+          "root_wetness": 0.47,
+          "heat_days": 3.5,
+          "severe_heat_days": 0.1,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.3,
+          "extreme_rain_days": 0.5,
+          "soil_moisture_anomaly": -1.28,
+          "ndvi": 0.68
+        },
+        {
+          "month": 7,
+          "t_mean": 27.3,
+          "t_max": 32.6,
+          "t_min": 21.6,
+          "precip_mm": 67.9,
+          "et0_mm": 175.0,
+          "deficit_mm": 107.1,
+          "root_wetness": 0.44,
+          "heat_days": 6.8,
+          "severe_heat_days": 1.1,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.45,
+          "extreme_rain_days": 0.1,
+          "soil_moisture_anomaly": -1.07,
+          "ndvi": 0.89
+        },
+        {
+          "month": 8,
+          "t_mean": 26.1,
+          "t_max": 31.9,
+          "t_min": 20.4,
+          "precip_mm": 75.9,
+          "et0_mm": 153.7,
+          "deficit_mm": 77.8,
+          "root_wetness": 0.41,
+          "heat_days": 5.6,
+          "severe_heat_days": 0.8,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.5,
+          "extreme_rain_days": 0.4,
+          "soil_moisture_anomaly": -0.79,
+          "ndvi": 0.84
+        },
+        {
+          "month": 9,
+          "t_mean": 21.9,
+          "t_max": 28.3,
+          "t_min": 15.9,
+          "precip_mm": 53.9,
+          "et0_mm": 113.3,
+          "deficit_mm": 59.4,
+          "root_wetness": 0.42,
+          "heat_days": 1.9,
+          "severe_heat_days": 0.1,
+          "frost_days": 0.0,
+          "dry_spell_prob": 0.7,
+          "extreme_rain_days": 0.1,
+          "soil_moisture_anomaly": -0.95,
+          "ndvi": 0.42
+        },
+        {
+          "month": 10,
+          "t_mean": 13.9,
+          "t_max": 20.3,
+          "t_min": 8.3,
+          "precip_mm": 50.1,
+          "et0_mm": 67.5,
+          "deficit_mm": 17.4,
+          "root_wetness": 0.44,
+          "heat_days": 0.1,
+          "severe_heat_days": 0.0,
+          "frost_days": 1.6,
+          "dry_spell_prob": 0.95,
+          "extreme_rain_days": 0.2,
+          "soil_moisture_anomaly": -1.22,
+          "ndvi": 0.25
+        },
+        {
+          "month": 11,
+          "t_mean": 6.1,
+          "t_max": 11.8,
+          "t_min": 1.5,
+          "precip_mm": 26.0,
+          "et0_mm": 32.9,
+          "deficit_mm": 6.9,
+          "root_wetness": 0.47,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 11.7,
+          "dry_spell_prob": 0.95,
+          "extreme_rain_days": 0.0,
+          "soil_moisture_anomaly": -0.95,
+          "ndvi": 0.23
+        },
+        {
+          "month": 12,
+          "t_mean": -0.5,
+          "t_max": 4.0,
+          "t_min": -4.6,
+          "precip_mm": 27.5,
+          "et0_mm": 17.9,
+          "deficit_mm": 0.0,
+          "root_wetness": 0.49,
+          "heat_days": 0.0,
+          "severe_heat_days": 0.0,
+          "frost_days": 22.7,
+          "dry_spell_prob": 0.9,
+          "extreme_rain_days": 0.1,
+          "soil_moisture_anomaly": -0.96,
+          "ndvi": 0.22
+        }
+      ],
+      "trends": {
+        "precip_mm_per_decade": -70.0,
+        "t_mean_c_per_decade": 0.71,
+        "precip_trend_significant": false,
+        "t_mean_trend_significant": false
+      },
+      "year_stress_flags": {
+        "2006": [
+          "drought",
+          "heat"
+        ],
+        "2007": [
+          "heat"
+        ],
+        "2011": [
+          "drought",
+          "heat"
+        ],
+        "2012": [
+          "drought",
+          "heat"
+        ],
+        "2013": [
+          "drought",
+          "heat"
+        ],
+        "2016": [
+          "drought"
+        ],
+        "2017": [
+          "drought",
+          "heat"
+        ],
+        "2018": [
+          "heat"
+        ],
+        "2020": [
+          "drought",
+          "heat"
+        ],
+        "2021": [
+          "drought",
+          "heat"
+        ],
+        "2022": [
+          "drought",
+          "heat"
+        ],
+        "2023": [
+          "drought",
+          "heat"
+        ],
+        "2024": [
+          "drought",
+          "heat"
+        ]
+      },
+      "frost_free_season": {
+        "median_days": 196,
+        "p10": 178,
+        "p90": 224
+      },
+      "soil_moisture_source": "power_root_wetness",
+      "bare_months_observed": [
+        1,
+        2,
+        3,
+        4,
+        11,
+        12
+      ],
+      "basis": "simulated"
     }
   },
   "soil": {
-    "texture": "Loam",
-    "organic_carbon": null,
-    "ph": null
+    "measured": {
+      "available": true,
+      "clay_pct": 38.1,
+      "sand_pct": 23.4,
+      "silt_pct": 38.5,
+      "soc_g_kg": 21.1,
+      "organic_matter_pct": 3.64,
+      "ph": 6.5,
+      "texture": "clay loam",
+      "texture_group": "fine",
+      "drainage_hint": "slow",
+      "erodibility_hint": "low",
+      "depth": "0-30cm",
+      "source": "ISRIC SoilGrids",
+      "resolution_m": 250
+    },
+    "farmer_texture_override": null
   },
   "bare_windows": [
     {
-      "start_month": 10,
-      "end_month": 3,
-      "risk": "moderate"
+      "month": 1,
+      "bare_fraction": 1.0
+    },
+    {
+      "month": 2,
+      "bare_fraction": 1.0
+    },
+    {
+      "month": 3,
+      "bare_fraction": 1.0
+    },
+    {
+      "month": 4,
+      "bare_fraction": 1.0
+    },
+    {
+      "month": 10,
+      "bare_fraction": 1.0
+    },
+    {
+      "month": 11,
+      "bare_fraction": 1.0
+    },
+    {
+      "month": 12,
+      "bare_fraction": 1.0
     }
   ],
   "vulnerable_months": [
-    7,
-    8
+    {
+      "month": 7,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "sensitive_stages": [
+        {
+          "crop": "maize",
+          "stage": "flowering",
+          "sensitive": [
+            "heat",
+            "drought"
+          ]
+        },
+        {
+          "crop": "soybean",
+          "stage": "flowering",
+          "sensitive": [
+            "heat",
+            "drought"
+          ]
+        }
+      ],
+      "reasons": [
+        "heat",
+        "dry_spell",
+        "soil_drying"
+      ],
+      "values": {
+        "heat_days": 6.8,
+        "dry_spell_prob": 0.45,
+        "frost_days": 0,
+        "soil_moisture_anomaly": -1.07
+      }
+    },
+    {
+      "month": 8,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "sensitive_stages": [
+        {
+          "crop": "maize",
+          "stage": "grain_fill",
+          "sensitive": [
+            "drought"
+          ]
+        },
+        {
+          "crop": "soybean",
+          "stage": "pod_fill",
+          "sensitive": [
+            "drought"
+          ]
+        }
+      ],
+      "reasons": [
+        "dry_spell"
+      ],
+      "values": {
+        "heat_days": 5.6,
+        "dry_spell_prob": 0.5,
+        "frost_days": 0,
+        "soil_moisture_anomaly": -0.79
+      }
+    }
   ],
   "alerts": [
     {
-      "severity": "info",
-      "title": "Illustrative analysis",
-      "message": "This response contains mock data and does not represent actual field measurements."
+      "type": "heat",
+      "severity": "critical",
+      "month": 7,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "stage": "flowering",
+      "triggered_by": [
+        {
+          "variable": "heat_days",
+          "value": 6.8,
+          "threshold": 35.0
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER",
+      "reason": "July: Maize (corn) and Soybean at the flowering stage, while this area averages 7 days above 35 °C.",
+      "action": "Consider earlier sowing or a more heat-tolerant variety so the flowering stage avoids July. Ask your extension office.",
+      "severity_label": "Critical"
+    },
+    {
+      "type": "water_deficit",
+      "severity": "critical",
+      "month": 7,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "stage": "flowering",
+      "triggered_by": [
+        {
+          "variable": "deficit_mm",
+          "value": 107.1,
+          "threshold": 30.0
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER",
+      "reason": "July: rain falls about 107 mm short of what the crops lose to evaporation (Maize (corn) and Soybean, flowering stage).",
+      "action": "Plan about 107 mm of irrigation for July, or consider a crop that needs less water.",
+      "severity_label": "Critical"
+    },
+    {
+      "type": "soil_drying",
+      "severity": "high",
+      "month": 5,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "stage": "establishment",
+      "triggered_by": [
+        {
+          "variable": "soil_moisture_anomaly",
+          "value": -1.58,
+          "threshold": -1.0
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER (root-zone wetness)",
+      "reason": "May: soil moisture has been below normal in recent years, -1.6 standard deviations (Maize (corn) and Soybean, establishment stage).",
+      "action": "Keep residue on the field and check soil moisture before deciding to irrigate.",
+      "severity_label": "High"
+    },
+    {
+      "type": "drought",
+      "severity": "high",
+      "month": 8,
+      "crops": [
+        "maize"
+      ],
+      "stage": "grain_fill",
+      "triggered_by": [
+        {
+          "variable": "dry_spell_prob",
+          "value": 0.5,
+          "threshold": 0.3
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER",
+      "reason": "In 50% of past years, August had a dry spell of 10+ days (Maize (corn), grain filling stage).",
+      "action": "Keep crop residue or mulch on the soil to hold moisture, and plan a backup irrigation if you can.",
+      "severity_label": "High"
+    },
+    {
+      "type": "drought",
+      "severity": "high",
+      "month": 8,
+      "crops": [
+        "soybean"
+      ],
+      "stage": "pod_fill",
+      "triggered_by": [
+        {
+          "variable": "dry_spell_prob",
+          "value": 0.5,
+          "threshold": 0.3
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER",
+      "reason": "In 50% of past years, August had a dry spell of 10+ days (Soybean, pod filling stage).",
+      "action": "Keep crop residue or mulch on the soil to hold moisture, and plan a backup irrigation if you can.",
+      "severity_label": "High"
+    },
+    {
+      "type": "water_deficit",
+      "severity": "high",
+      "month": 8,
+      "crops": [
+        "maize"
+      ],
+      "stage": "grain_fill",
+      "triggered_by": [
+        {
+          "variable": "deficit_mm",
+          "value": 77.8,
+          "threshold": 30.0
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER",
+      "reason": "August: rain falls about 78 mm short of what the crops lose to evaporation (Maize (corn), grain filling stage).",
+      "action": "Plan about 78 mm of irrigation for August, or consider a crop that needs less water.",
+      "severity_label": "High"
+    },
+    {
+      "type": "water_deficit",
+      "severity": "high",
+      "month": 8,
+      "crops": [
+        "soybean"
+      ],
+      "stage": "pod_fill",
+      "triggered_by": [
+        {
+          "variable": "deficit_mm",
+          "value": 77.8,
+          "threshold": 30.0
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER",
+      "reason": "August: rain falls about 78 mm short of what the crops lose to evaporation (Soybean, pod filling stage).",
+      "action": "Plan about 78 mm of irrigation for August, or consider a crop that needs less water.",
+      "severity_label": "High"
+    },
+    {
+      "type": "soil_drying",
+      "severity": "moderate",
+      "month": 6,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "stage": "vegetative",
+      "triggered_by": [
+        {
+          "variable": "soil_moisture_anomaly",
+          "value": -1.28,
+          "threshold": -1.0
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER (root-zone wetness)",
+      "reason": "June: soil moisture has been below normal in recent years, -1.3 standard deviations (Maize (corn) and Soybean, vegetative stage).",
+      "action": "Keep residue on the field and check soil moisture before deciding to irrigate.",
+      "severity_label": "Moderate"
+    },
+    {
+      "type": "drought",
+      "severity": "moderate",
+      "month": 7,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "stage": "flowering",
+      "triggered_by": [
+        {
+          "variable": "dry_spell_prob",
+          "value": 0.45,
+          "threshold": 0.3
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER",
+      "reason": "In 45% of past years, July had a dry spell of 10+ days (Maize (corn) and Soybean, flowering stage).",
+      "action": "Keep crop residue or mulch on the soil to hold moisture, and plan a backup irrigation if you can.",
+      "severity_label": "Moderate"
+    },
+    {
+      "type": "soil_drying",
+      "severity": "moderate",
+      "month": 7,
+      "crops": [
+        "maize",
+        "soybean"
+      ],
+      "stage": "flowering",
+      "triggered_by": [
+        {
+          "variable": "soil_moisture_anomaly",
+          "value": -1.07,
+          "threshold": -1.0
+        }
+      ],
+      "basis": "simulated",
+      "source": "NASA POWER (root-zone wetness)",
+      "reason": "July: soil moisture has been below normal in recent years, -1.1 standard deviations (Maize (corn) and Soybean, flowering stage).",
+      "action": "Keep residue on the field and check soil moisture before deciding to irrigate.",
+      "severity_label": "Moderate"
     }
   ],
   "strategies": [
     {
       "key": "current",
       "name": "Current Rotation",
-      "description": "Represents the existing crop rotation.",
-      "scores": {
-        "overall": 62,
-        "water_fit": 60,
-        "climate_risk": 58,
-        "soil_health": 65,
-        "erosion_infiltration": 64,
-        "pest_break": 60,
-        "income": 55
+      "description": "Represents the farmer's supplied crop rotation.",
+      "is_current": true,
+      "rotation": {
+        "cycle_years": 2,
+        "steps": [
+          {
+            "year": 1,
+            "crop": "maize",
+            "sow_month": 5,
+            "harvest_month": 10
+          },
+          {
+            "year": 2,
+            "crop": "soybean",
+            "sow_month": 5,
+            "harvest_month": 10
+          }
+        ]
       },
-      "baseline_scores": null
+      "scores": {
+        "overall": 55.5,
+        "water_fit": 38.8,
+        "climate_risk": 58.1,
+        "soil_health": 55.0,
+        "erosion_infiltration": 46.9,
+        "pest_break": 67.5,
+        "income": 78.1
+      },
+      "baseline_scores": {
+        "overall": 60.9,
+        "water_fit": 46.9,
+        "climate_risk": 77.8,
+        "soil_health": 55.0,
+        "erosion_infiltration": 46.9,
+        "pest_break": 67.5,
+        "income": 78.1
+      },
+      "why_suggested": "This is what is farmed here today. It is the baseline the other options are compared with.",
+      "evidence": [
+        {
+          "text": "July is a water-critical month for Maize (corn) and Soybean, but rain (68 mm) is far below evaporation demand (175 mm): a gap of 107 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 7,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        },
+        {
+          "text": "August is a water-critical month for Maize (corn) and Soybean, but rain (76 mm) is far below evaporation demand (154 mm): a gap of 78 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 8,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        },
+        {
+          "text": "July: Maize (corn) and Soybean at the flowering stage, while this area averages 7 days above 35 °C.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "heat",
+          "month": 7,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        },
+        {
+          "text": "In 50% of the last 20 years, August had a dry spell of 10+ days during the grain filling stage of Maize (corn) and Soybean.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "dry_spell",
+          "month": 8,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        },
+        {
+          "text": "In 45% of the last 20 years, July had a dry spell of 10+ days during the flowering stage of Maize (corn) and Soybean.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "dry_spell",
+          "month": 7,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        }
+      ],
+      "benefits": [
+        "Familiar crops, equipment and markets: no new skills or buyers needed.",
+        "Nitrogen-fixing crops (Soybean) take nitrogen from the air, so the next crop needs less fertilizer."
+      ],
+      "info_gaps": [
+        "Ground data (PRISM weather, SSURGO soil, CDL crop history) is used, but there is no soil test from this field.",
+        "These results use a What-If scenario (+3 °C, -30% rain), not observed weather.",
+        "Income values are rough regional placeholders, not local prices."
+      ],
+      "local_review": [
+        "Get a soil test (nutrients, organic matter, salinity) before changing the rotation.",
+        "Rain covers only part of the crop water need here: confirm how much irrigation water you can count on."
+      ]
     },
     {
       "key": "water_saver",
       "name": "Water Saver",
-      "description": "Emphasizes water conservation and drought resilience.",
+      "description": "Swaps maize for drought-tolerant sorghum, adds winter wheat so the field is covered over winter, and a rye cover after wheat. Lower summer water demand and less bare soil.",
+      "is_current": false,
+      "rotation": {
+        "cycle_years": 3,
+        "steps": [
+          {
+            "year": 1,
+            "crop": "sorghum",
+            "sow_month": 5,
+            "harvest_month": 10
+          },
+          {
+            "year": 2,
+            "crop": "soybean",
+            "sow_month": 5,
+            "harvest_month": 9
+          },
+          {
+            "year": 2,
+            "crop": "wheat",
+            "sow_month": 10,
+            "harvest_month": 7
+          },
+          {
+            "year": 3,
+            "crop": "cereal_rye",
+            "sow_month": 9,
+            "harvest_month": 4
+          }
+        ]
+      },
       "scores": {
-        "overall": 78,
-        "water_fit": 88,
-        "climate_risk": 76,
-        "soil_health": 72,
-        "erosion_infiltration": 75,
-        "pest_break": 70,
-        "income": 60
+        "overall": 61.9,
+        "water_fit": 49.3,
+        "climate_risk": 73.0,
+        "soil_health": 59.4,
+        "erosion_infiltration": 73.1,
+        "pest_break": 50.0,
+        "income": 59.4
       },
       "baseline_scores": {
-        "overall": 62,
-        "water_fit": 60,
-        "climate_risk": 58,
-        "soil_health": 65,
-        "erosion_infiltration": 64,
-        "pest_break": 60,
-        "income": 55
-      }
+        "overall": 65.3,
+        "water_fit": 56.4,
+        "climate_risk": 83.5,
+        "soil_health": 59.4,
+        "erosion_infiltration": 73.1,
+        "pest_break": 50.0,
+        "income": 59.4
+      },
+      "why_suggested": "Suggested to lower the farm's water demand: it uses crops that need less water or handle drought better. The field is bare about 3 fewer months per year.",
+      "evidence": [
+        {
+          "text": "July is a water-critical month for Sorghum and Soybean, but rain (68 mm) is far below evaporation demand (175 mm): a gap of 107 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 7,
+          "crops": [
+            "sorghum",
+            "soybean"
+          ]
+        },
+        {
+          "text": "August is a water-critical month for Soybean, but rain (76 mm) is far below evaporation demand (154 mm): a gap of 78 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 8,
+          "crops": [
+            "soybean"
+          ]
+        },
+        {
+          "text": "June is a water-critical month for Soybean, but rain (91 mm) is far below evaporation demand (169 mm): a gap of 77 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 6,
+          "crops": [
+            "soybean"
+          ]
+        },
+        {
+          "text": "May is a water-critical month for Wheat, but rain (78 mm) is far below evaporation demand (147 mm): a gap of 69 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 5,
+          "crops": [
+            "wheat"
+          ]
+        },
+        {
+          "text": "July: Soybean at the flowering stage, while this area averages 7 days above 35 °C.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "heat",
+          "month": 7,
+          "crops": [
+            "soybean"
+          ]
+        }
+      ],
+      "benefits": [
+        "Nitrogen-fixing crops (Soybean) take nitrogen from the air, so the next crop needs less fertilizer.",
+        "Cover crops (Cereal rye (cover crop)) protect the soil between main crops from heavy rain and wind.",
+        "Deep-rooted crops (Sorghum, Wheat and Cereal rye (cover crop)) open the soil so rain soaks in instead of running off.",
+        "Drought-tolerant crops (Sorghum and Cereal rye (cover crop)) handle dry spells better than the crops they replace.",
+        "Fodder crops (Sorghum) can feed animals or bring extra income."
+      ],
+      "info_gaps": [
+        "Ground data (PRISM weather, SSURGO soil, CDL crop history) is used, but there is no soil test from this field.",
+        "These results use a What-If scenario (+3 °C, -30% rain), not observed weather.",
+        "Income values are rough regional placeholders, not local prices."
+      ],
+      "local_review": [
+        "Get a soil test (nutrients, organic matter, salinity) before changing the rotation.",
+        "Check that there are buyers or a use for Sorghum, Wheat and Cereal rye (cover crop) near you.",
+        "Ask about local pest and disease history for the new crops (Sorghum, Wheat and Cereal rye (cover crop)).",
+        "Rain covers only part of the crop water need here: confirm how much irrigation water you can count on."
+      ]
     },
     {
       "key": "soil_builder",
       "name": "Soil Builder",
-      "description": "Emphasizes soil health, ground cover and erosion protection.",
+      "description": "Adds a winter rye cover after corn, a small grain (oats) to break the corn–soybean pest cycle, and red clover underseeded in the oats to fix nitrogen and add organic matter.",
+      "is_current": false,
+      "rotation": {
+        "cycle_years": 3,
+        "steps": [
+          {
+            "year": 1,
+            "crop": "maize",
+            "sow_month": 5,
+            "harvest_month": 10
+          },
+          {
+            "year": 1,
+            "crop": "cereal_rye",
+            "sow_month": 10,
+            "harvest_month": 4
+          },
+          {
+            "year": 2,
+            "crop": "soybean",
+            "sow_month": 5,
+            "harvest_month": 10
+          },
+          {
+            "year": 3,
+            "crop": "oats",
+            "sow_month": 4,
+            "harvest_month": 7
+          },
+          {
+            "year": 3,
+            "crop": "red_clover",
+            "sow_month": 4,
+            "harvest_month": 10,
+            "companion": true
+          }
+        ]
+      },
       "scores": {
-        "overall": 82,
-        "water_fit": 75,
-        "climate_risk": 78,
-        "soil_health": 90,
-        "erosion_infiltration": 88,
-        "pest_break": 82,
-        "income": 58
+        "overall": 56.4,
+        "water_fit": 35.1,
+        "climate_risk": 61.7,
+        "soil_health": 60.5,
+        "erosion_infiltration": 68.2,
+        "pest_break": 60.5,
+        "income": 51.2
       },
       "baseline_scores": {
-        "overall": 62,
-        "water_fit": 60,
-        "climate_risk": 58,
-        "soil_health": 65,
-        "erosion_infiltration": 64,
-        "pest_break": 60,
-        "income": 55
-      }
+        "overall": 61.8,
+        "water_fit": 42.8,
+        "climate_risk": 81.8,
+        "soil_health": 60.5,
+        "erosion_infiltration": 68.2,
+        "pest_break": 60.5,
+        "income": 51.2
+      },
+      "why_suggested": "Suggested to rebuild the soil: it adds nitrogen-fixing legumes, more ground cover and more crop families. It needs about 31% more water per year than your current rotation (783 mm instead of 600 mm). The field is bare about 2 fewer months per year.",
+      "evidence": [
+        {
+          "text": "July is a water-critical month for Maize (corn) and Soybean, but rain (68 mm) is far below evaporation demand (175 mm): a gap of 107 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 7,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        },
+        {
+          "text": "August is a water-critical month for Maize (corn) and Soybean, but rain (76 mm) is far below evaporation demand (154 mm): a gap of 78 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 8,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        },
+        {
+          "text": "June is a water-critical month for Oats, but rain (91 mm) is far below evaporation demand (169 mm): a gap of 77 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 6,
+          "crops": [
+            "oats"
+          ]
+        },
+        {
+          "text": "May is a water-critical month for Red clover, but rain (78 mm) is far below evaporation demand (147 mm): a gap of 69 mm to cover by irrigation or stored soil water.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "deficit",
+          "month": 5,
+          "crops": [
+            "red_clover"
+          ]
+        },
+        {
+          "text": "July: Maize (corn) and Soybean at the flowering stage, while this area averages 7 days above 35 °C.",
+          "source": "NASA POWER",
+          "type": "observed",
+          "kind": "heat",
+          "month": 7,
+          "crops": [
+            "maize",
+            "soybean"
+          ]
+        }
+      ],
+      "benefits": [
+        "Nitrogen-fixing crops (Soybean and Red clover) take nitrogen from the air, so the next crop needs less fertilizer.",
+        "Cover crops (Cereal rye (cover crop) and Red clover) protect the soil between main crops from heavy rain and wind.",
+        "Deep-rooted crops (Cereal rye (cover crop) and Red clover) open the soil so rain soaks in instead of running off.",
+        "Drought-tolerant crops (Cereal rye (cover crop)) handle dry spells better than the crops they replace.",
+        "Fodder crops (Oats and Red clover) can feed animals or bring extra income."
+      ],
+      "info_gaps": [
+        "Ground data (PRISM weather, SSURGO soil, CDL crop history) is used, but there is no soil test from this field.",
+        "These results use a What-If scenario (+3 °C, -30% rain), not observed weather.",
+        "Income values are rough regional placeholders, not local prices."
+      ],
+      "local_review": [
+        "Get a soil test (nutrients, organic matter, salinity) before changing the rotation.",
+        "Check that there are buyers or a use for Cereal rye (cover crop), Oats and Red clover near you.",
+        "Ask about local pest and disease history for the new crops (Cereal rye (cover crop), Oats and Red clover).",
+        "Rain covers only part of the crop water need here: confirm how much irrigation water you can count on."
+      ]
     }
   ],
-  "disclaimer": "This is illustrative mock data for frontend development. Scores and values are not real measurements or agricultural recommendations."
+  "disclaimer": "FieldShift Planner provides decision-support information, not guaranteed predictions. Income scores are regional placeholders."
 }
