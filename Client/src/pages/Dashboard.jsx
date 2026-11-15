@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -189,6 +189,8 @@ export default function Dashboard() {
   const [basePayload, setBasePayload] = useState(null);
   const [baselineAnalysis, setBaselineAnalysis] = useState(null);
   const [scenarioAnalysis, setScenarioAnalysis] = useState(null);
+  // Which analysis the explanation being fetched belongs to (drops late answers for old farms)
+  const explainFor = useRef(null);
 
   const user = useSelector((s) => s.auth.user);
   const email = user?.email ?? '';
@@ -256,13 +258,18 @@ export default function Dashboard() {
       setBaselineAnalysis(result);
       setScenarioAnalysis(null);
       setSubmitted(true);
+      // Show scores and alerts right away; the explanation arrives a few seconds later
+      setAnalyzing(false);
 
-      // 2) POST /api/explain/ -> plain-language summary of the best strategy
-      try {
-        setExplanation(await explainAnalysis(result, farmData.lang));
-      } catch {
-        /* explanation is optional — charts still show */
-      }
+      // 2) POST /api/explain/ -> plain-language summary of the best strategy (in the background)
+      explainFor.current = result.analysis_id;
+      explainAnalysis(result, farmData.lang)
+        .then((e) => {
+          if (explainFor.current === result.analysis_id) setExplanation(e);
+        })
+        .catch(() => {
+          /* explanation is optional — charts still show */
+        });
     } catch (err) {
       setAnalyzeError(err.message);
     } finally {

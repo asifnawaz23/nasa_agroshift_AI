@@ -175,6 +175,25 @@ TEXTURE_CLASSES = (
 )
 
 
+# Everyday names a farmer picks in the form -> the USDA texture class used by the engine.
+TEXTURE_ALIASES = {
+    "sandy": "sandy loam", "sandy soil": "sandy loam",
+    "loamy": "loam", "loam soil": "loam",
+    "clayey": "clay", "clay soil": "clay", "heavy": "clay",
+    "silty": "silt loam", "silt soil": "silt loam",
+}
+
+
+def normalize_texture(texture: str | None) -> str | None:
+    """'Sandy' -> 'sandy loam', 'Clay' -> 'clay'; unknown names are returned as typed."""
+    if texture is None:
+        return None
+    name = " ".join(str(texture).strip().lower().replace("_", " ").split())
+    if not name:
+        return None
+    return TEXTURE_ALIASES.get(name, name)
+
+
 def apply_texture_override(soil: dict | None, texture: str | None) -> dict | None:
     """The farmer knows their field better than a 250 m map: use their texture.
 
@@ -182,9 +201,9 @@ def apply_texture_override(soil: dict | None, texture: str | None) -> dict | Non
     hints (drainage, erodibility) that the alerts and erosion score use. Returns `soil`
     unchanged when no override is given.
     """
+    texture = normalize_texture(texture)
     if not texture:
         return soil
-    texture = texture.strip().lower()
     if texture not in TEXTURE_CLASSES:
         raise ValueError(f"Unknown soil texture: {texture}")
     group = texture_group(texture)

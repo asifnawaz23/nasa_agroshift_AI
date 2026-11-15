@@ -356,3 +356,20 @@ class TemplateAnswerDedupTests(SimpleTestCase):
         }
         texts = [p["text"] for p in template_answer(analysis, "overview", "en")["points"]]
         self.assertEqual(texts.count(line), 1)
+
+
+class EverydaySoilNamesTests(SimpleTestCase):
+    def test_form_soil_names_are_accepted(self):
+        from api.serializers import OverridesSerializer
+
+        for given, expected in [("sandy", "sandy loam"), ("Sandy", "sandy loam"), ("loam", "loam"),
+                                ("clay", "clay"), ("silt", "silt"), ("clay loam", "clay loam"),
+                                ("", None), (None, None)]:
+            s = OverridesSerializer(data={"soil_texture": given})
+            self.assertTrue(s.is_valid(), (given, s.errors))
+            self.assertEqual(s.validated_data.get("soil_texture"), expected)
+
+    def test_unknown_soil_name_is_rejected(self):
+        from api.serializers import OverridesSerializer
+
+        self.assertFalse(OverridesSerializer(data={"soil_texture": "rocky moon dust"}).is_valid())

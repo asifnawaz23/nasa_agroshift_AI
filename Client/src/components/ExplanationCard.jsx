@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { explainAnalysis } from '../services/api';
 
 /*
@@ -16,11 +16,16 @@ const LANGUAGES = [
   { code: 'pa', label: 'پنجابی', rtl: true },
 ];
 
-const POINT_LABELS = {
-  observed: 'Observed',
-  estimated_cause: 'Likely cause',
-  prediction: 'Prediction',
-  general: 'General advice',
+// Card labels in each language, so the whole card is translated, not just the AI text
+const LABELS = {
+  en: { observed: 'Observed', estimated_cause: 'Likely cause', prediction: 'Prediction', general: 'General advice',
+        actions: 'What you can do', expert: 'Check with a local expert', loading: 'Translating…' },
+  ur: { observed: 'مشاہدہ', estimated_cause: 'ممکنہ وجہ', prediction: 'اندازہ', general: 'عام مشورہ',
+        actions: 'آپ کیا کر سکتے ہیں', expert: 'مقامی ماہر سے پوچھیں', loading: 'ترجمہ ہو رہا ہے…' },
+  sd: { observed: 'مشاهدو', estimated_cause: 'ممڪن سبب', prediction: 'اندازو', general: 'عام صلاح',
+        actions: 'توهان ڇا ڪري سگهو ٿا', expert: 'مقامي ماهر کان پڇو', loading: 'ترجمو ٿي رهيو آهي…' },
+  pa: { observed: 'ویکھیا گیا', estimated_cause: 'ممکنہ وجہ', prediction: 'اندازہ', general: 'عام صلاح',
+        actions: 'تسیں کی کر سکدے او', expert: 'مقامی ماہر توں پچھو', loading: 'ترجمہ ہو رہیا اے…' },
 };
 
 export default function ExplanationCard({ analysis, initial }) {
@@ -33,11 +38,13 @@ export default function ExplanationCard({ analysis, initial }) {
   const data = byLang[lang];
   const rtl = LANGUAGES.find((l) => l.code === lang)?.rtl;
   const text = data?.summary || data?.explanation;
+  const L = LABELS[lang] || LABELS.en;
 
   const switchLanguage = async (code) => {
     setLang(code);
     setError('');
-    if (byLang[code]) return;
+    // Reuse a full AI answer; a basic (no-AI) answer is asked for again, since the AI may be back
+    if (byLang[code]?.ai_used) return;
     setLoading(true);
     try {
       const result = await explainAnalysis(analysis, code);
@@ -86,7 +93,7 @@ export default function ExplanationCard({ analysis, initial }) {
 
       {/* Body */}
       <div dir={rtl ? 'rtl' : 'ltr'} lang={lang} className={`mt-3 text-start ${rtl ? 'leading-loose' : ''}`}>
-        {loading && <p className="text-sm text-slate-500">Translating…</p>}
+        {loading && <p className="text-sm text-slate-500">{L.loading}</p>}
         {error && <p className="text-sm text-red-700">{error}</p>}
 
         {!loading && text && (
@@ -98,8 +105,8 @@ export default function ExplanationCard({ analysis, initial }) {
             {data.points.map((p, i) => (
               // dir="auto": an English line inside the Urdu/Sindhi view still reads left-to-right
               <li key={i} dir="auto" className="text-sm text-slate-700">
-                <span className="inline-block px-1.5 py-0.5 me-1.5 text-[10px] font-semibold rounded bg-sky-100 text-sky-800" dir="ltr">
-                  {POINT_LABELS[p.type] || p.type}
+                <span className="inline-block px-1.5 py-0.5 me-1.5 text-[10px] font-semibold rounded bg-sky-100 text-sky-800">
+                  {L[p.type] || p.type}
                 </span>
                 {p.text}
                 {p.source && <span className="text-xs text-slate-400" dir="ltr"> ({p.source})</span>}
@@ -110,8 +117,8 @@ export default function ExplanationCard({ analysis, initial }) {
 
         {!loading && data?.actions?.length > 0 && (
           <div className="mt-3">
-            <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wide" dir="ltr">
-              What you can do
+            <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wide">
+              {L.actions}
             </p>
             <ul dir="auto" className="mt-1 list-disc ps-5 space-y-1 text-sm text-slate-700">
               {data.actions.map((a, i) => <li key={i} dir="auto">{a}</li>)}
@@ -121,8 +128,8 @@ export default function ExplanationCard({ analysis, initial }) {
 
         {!loading && data?.needs_expert?.length > 0 && (
           <div className="mt-3">
-            <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide" dir="ltr">
-              Check with a local expert
+            <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+              {L.expert}
             </p>
             <ul dir="auto" className="mt-1 list-disc ps-5 space-y-1 text-sm text-slate-700">
               {data.needs_expert.map((a, i) => <li key={i} dir="auto">{a}</li>)}
@@ -133,8 +140,8 @@ export default function ExplanationCard({ analysis, initial }) {
 
       {data && !data.ai_used && lang !== 'en' && (
         <p className="mt-3 text-xs text-slate-500">
-          Only the summary is translated in basic mode. Full translation needs the AI explanation
-          (an LLM_API_KEY on the backend).
+          The AI was busy, so only the summary is translated. Tap the language again to retry the
+          full translation.
         </p>
       )}
     </div>

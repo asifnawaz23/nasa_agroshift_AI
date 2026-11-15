@@ -137,8 +137,8 @@ def test_gemini_turns_thinking_off_and_falls_back_on_400_and_404(gemini_env):
     session = FakeSession(FakeResp(404), FakeResp(400), FakeResp(400), FakeResp(400), gemini_ok())
     assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=session, use_cache=False) == ANSWER
     configs = [c["json"]["generationConfig"] for c in session.calls]
-    assert "gemini-2.5-flash-lite" in session.calls[0]["url"]
-    assert all("gemini-flash-lite-latest" in c["url"] for c in session.calls[1:])
+    assert "gemini-flash-lite-latest" in session.calls[0]["url"]
+    assert all("gemini-3.5-flash-lite" in c["url"] for c in session.calls[1:])
     assert configs[1]["thinkingConfig"] == {"thinkingBudget": 0}
     assert configs[2]["thinkingConfig"] == {"thinkingLevel": "minimal"}
     assert "thinkingConfig" not in configs[3] and "responseJsonSchema" in configs[3]
@@ -168,5 +168,5 @@ def test_gemini_slow_model_is_skipped(gemini_env):
             return gemini_ok()
     session = SlowThenOk()
     assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=session, use_cache=False) == ANSWER
-    assert "gemini-2.5-flash-lite" in session.calls[0]["url"]
-    assert "gemini-flash-lite-latest" in session.calls[1]["url"]
+    assert "gemini-flash-lite-latest" in session.calls[0]["url"]
+    assert "gemini-3.5-flash-lite" in session.calls[1]["url"]

@@ -185,7 +185,7 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:ge
 # Tried in order. Lite models answer in a few seconds on the free tier; the live check
 # (/api/health/?ai=1) showed "gemini-flash-latest" hanging for 30 s+. A model that is missing
 # (404) or too slow is skipped. Override with GEMINI_MODEL (one name, or several comma-separated).
-GEMINI_DEFAULT_MODELS = ("gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash",
+GEMINI_DEFAULT_MODELS = ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-2.5-flash",
                          "gemini-flash-latest")
 # Longest wait for one model before trying the next one.
 GEMINI_PER_MODEL_S = 15

@@ -1,9 +1,12 @@
 
 import json
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from functools import lru_cache
 
-from django.db import DatabaseError, connection
+from django.db import DatabaseError, close_old_connections, connection
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -43,6 +46,20 @@ from ai.client import ANSWER_SCHEMA, ai_diagnostics, ask_llm
 from ai.ratelimit import ai_rate_limited
 
 from .chat_history import save_exchange, user_from_token
+
+
+# SoilGrids (ISRIC) is often slow (we measured 55 s timeouts). Fetch it next to NASA POWER and
+# wait at most SOIL_WAIT_S: if it is not back by then, the analysis continues without it and the
+# fetch keeps running in the background, so the answer is cached for the next analysis here.
+SOIL_WAIT_S = 8
+_soil_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="soil")
+
+
+def _soil_in_background(lat, lon):
+    try:
+        return get_soil(lat, lon)
+    finally:
+        close_old_connections()  # this thread used the DB cache: release its connection
 
 
 def health_check(request):
@@ -341,6 +358,10 @@ def analyze(request):
         )
         data_tier = featured["tier"] if featured else "standard"
 
+        # Start the soil lookup now so it runs while NASA POWER loads.
+        soil_started = time.monotonic()
+        soil_future = _soil_pool.submit(_soil_in_background, lat, lon)
+
         # Load climate data. Use the featured snapshot only if live loading fails.
         power_meta = {}
         try:
@@ -366,8 +387,17 @@ def analyze(request):
                 status=503,
             )
 
-        # Load soil data. Soil is optional for analysis.
-        soil, soil_meta = get_soil(lat, lon)
+        # Load soil data. Soil is optional for analysis, so don't keep the farmer waiting for it.
+        try:
+            wait = max(0.5, SOIL_WAIT_S - (time.monotonic() - soil_started))
+            soil, soil_meta = soil_future.result(timeout=wait)
+        except FutureTimeout:
+            soil, soil_meta = None, {"cache_hit": False, "fallback_used": False, "fetched_at": None,
+                                     "error": "SoilGrids is slow right now; soil data will be used "
+                                              "on the next analysis of this place."}
+        except Exception:  # soil is optional: never fail the analysis because of it
+            soil, soil_meta = None, {"cache_hit": False, "fallback_used": False, "fetched_at": None,
+                                     "error": "Soil data could not be loaded."}
         if soil is None and prepulled.get("soil") is not None:
             soil = prepulled["soil"]
             soil_meta = {

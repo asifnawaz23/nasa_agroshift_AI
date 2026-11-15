@@ -48,11 +48,24 @@ class ConstraintsSerializer(serializers.Serializer):
     )
 
 
+class SoilTextureField(serializers.ChoiceField):
+    """USDA texture class, also accepting everyday names from the form ("sandy", "clay")."""
+
+    def to_internal_value(self, data):
+        from datasources.soilgrids import normalize_texture
+
+        normalized = normalize_texture(data) if isinstance(data, str) else data
+        if normalized is None:
+            return None
+        return super().to_internal_value(normalized)
+
+
 class OverridesSerializer(serializers.Serializer):
-    # USDA texture class from the farmer (e.g. "clay loam"); replaces the SoilGrids texture.
-    soil_texture = serializers.ChoiceField(
+    # Soil texture from the farmer (e.g. "sandy" or "clay loam"); replaces the SoilGrids texture.
+    soil_texture = SoilTextureField(
         choices=TEXTURE_CLASSES,
         allow_null=True,
+        allow_blank=True,
         required=False,
     )
 
