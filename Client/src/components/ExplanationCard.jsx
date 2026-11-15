@@ -20,6 +20,7 @@ const POINT_LABELS = {
   observed: 'Observed',
   estimated_cause: 'Likely cause',
   prediction: 'Prediction',
+  general: 'General advice',
 };
 
 export default function ExplanationCard({ analysis, initial }) {

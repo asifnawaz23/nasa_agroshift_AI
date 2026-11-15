@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { sendChatMessage } from '../services/api';
+import { useSelector } from 'react-redux';
+import {
+  deleteConversation,
+  getConversation,
+  listConversations,
+  sendChatMessage,
+} from '../services/api';
 import { CHAT_LANGUAGES, detectLanguage } from '../utils/language';
 import { useVoice } from '../hooks/useVoice';
 
@@ -36,7 +42,72 @@ export default function ChatPanel({ analysis }) {
   const listRef = useRef(null);
   const voice = useVoice();
 
+  // Saved chats (only when logged in — the backend stores them per user)
+  const isLoggedIn = useSelector((s) => s.auth.isAuthenticated);
+  const [conversationId, setConversationId] = useState(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+
   const micLang = langMode === 'auto' ? lastLang : langMode;
+
+  const openHistory = async () => {
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistoryError('');
+    try {
+      const data = await listConversations();
+      setConversations(data.results ?? []);
+    } catch (err) {
+      setHistoryError(err.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Load a saved chat back into the window and keep adding to it
+  const loadConversation = async (id) => {
+    setHistoryLoading(true);
+    setHistoryError('');
+    try {
+      const data = await getConversation(id);
+      voice.stopSpeaking();
+      setMessages([
+        WELCOME,
+        ...data.messages.map((m) => ({
+          from: m.role === 'user' ? 'me' : 'bot',
+          text: m.content,
+          lang: m.lang in CHAT_LANGUAGES ? m.lang : 'en',
+        })),
+      ]);
+      setConversationId(id);
+      setHistoryOpen(false);
+    } catch (err) {
+      setHistoryError(err.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const removeConversation = async (id) => {
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
+    try {
+      await deleteConversation(id);
+      setConversations((list) => list.filter((c) => c.id !== id));
+      if (id === conversationId) newChat();
+    } catch (err) {
+      setHistoryError(err.message);
+    }
+  };
+
+  const newChat = () => {
+    voice.stopSpeaking();
+    setMessages([WELCOME]);
+    setConversationId(null);
+    setHistoryOpen(false);
+    setNotice('');
+  };
 
   // Keep the newest message in view
   useEffect(() => {
@@ -74,7 +145,9 @@ export default function ChatPanel({ analysis }) {
     setSending(true);
 
     try {
-      const { reply } = await sendChatMessage(history, analysis, lang);
+      const data = await sendChatMessage(history, analysis, lang, conversationId);
+      const reply = data.reply;
+      if (data.conversation_id) setConversationId(data.conversation_id); // saved on the server
       setMessages((m) => [...m, { from: 'bot', text: reply, lang }]);
       // The reply's position: current messages + the question just added
       if (voiceReplies) speakReply(reply, lang, messages.length + 1);
@@ -100,7 +173,92 @@ export default function ChatPanel({ analysis }) {
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div className="relative bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      {/* Saved chats bar (logged-in users) */}
+      {isLoggedIn && (
+        <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
+          <p className="text-xs text-slate-500 truncate">
+            {conversationId ? '💾 Saved to your history' : 'New conversation'}
+          </p>
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={newChat}
+              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100"
+            >
+              + New chat
+            </button>
+            <button
+              type="button"
+              onClick={() => (historyOpen ? setHistoryOpen(false) : openHistory())}
+              aria-expanded={historyOpen}
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700"
+            >
+              🕘 History
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* History panel — slides over the chat */}
+      {historyOpen && (
+        <div className="absolute inset-x-0 top-[49px] bottom-0 z-10 flex flex-col bg-white">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+            <p className="text-sm font-semibold text-slate-900">Your conversations</p>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              aria-label="Close history"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {historyLoading && <p className="px-5 py-4 text-sm text-slate-500">Loading…</p>}
+            {historyError && <p className="px-5 py-4 text-sm text-red-700">{historyError}</p>}
+            {!historyLoading && !historyError && conversations.length === 0 && (
+              <p className="px-5 py-8 text-sm text-center text-slate-500">
+                No saved conversations yet. Ask a question and it will appear here.
+              </p>
+            )}
+            <ul className="divide-y divide-slate-100">
+              {conversations.map((c) => (
+                <li
+                  key={c.id}
+                  className={`flex items-center gap-2 px-5 py-3 hover:bg-green-50 ${
+                    c.id === conversationId ? 'bg-green-50/70' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => loadConversation(c.id)}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <p dir="auto" className="text-sm font-medium text-slate-800 truncate">
+                      {c.title}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(c.updated_at).toLocaleString()} · {c.message_count} messages
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeConversation(c.id)}
+                    className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
+                    aria-label={`Delete conversation: ${c.title}`}
+                    title="Delete"
+                  >
+                    🗑
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar: language + voice replies */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-slate-100">
         <div className="flex flex-wrap p-1 bg-slate-100 rounded-xl" role="group" aria-label="Reply language">

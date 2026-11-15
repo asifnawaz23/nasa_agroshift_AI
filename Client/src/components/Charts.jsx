@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { mockAnalysis } from '../data/mockAnalysis';
 
 /*
   Charts for the crop-rotation analysis (POST /api/analyze/).
 
   Usage:
-    <Charts />                         -> shows mock data
+    <Charts />                         -> "No analysis yet" placeholder
     <Charts analysis={apiResponse} />  -> shows real backend data
 
   No chart library: bars are plain divs sized by width %.
@@ -254,7 +253,8 @@ function ScoreTable({ strategies }) {
 
 /* ---------- Main component ---------- */
 
-export default function Charts({ analysis = mockAnalysis }) {
+// No default data: the caller decides what to show (real results, or a clearly labelled example)
+export default function Charts({ analysis = null }) {
   const [showTable, setShowTable] = useState(false);
   const strategies = analysis?.strategies ?? [];
 

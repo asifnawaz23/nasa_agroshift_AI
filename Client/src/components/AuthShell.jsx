@@ -27,7 +27,7 @@ const STARS = Array.from({ length: 70 }, (_, i) => ({
   duration: `${2 + rand(i, 5, 53.71) * 4}s`,
 }));
 
-export default function AuthShell({ status, title, subtitle, chips, children }) {
+export default function AuthShell({ title, subtitle, children }) {
   const cardRef = useRef(null);
 
   // 3D tilt that follows the mouse (pointer devices only)
@@ -104,41 +104,20 @@ export default function AuthShell({ status, title, subtitle, chips, children }) 
       >
         <div className="login3d__card" ref={cardRef}>
           <div className="login3d__glare" aria-hidden="true" />
-          <span className="login3d__hud-corner login3d__hud-corner--tl" aria-hidden="true" />
-          <span className="login3d__hud-corner login3d__hud-corner--tr" aria-hidden="true" />
-          <span className="login3d__hud-corner login3d__hud-corner--bl" aria-hidden="true" />
-          <span className="login3d__hud-corner login3d__hud-corner--br" aria-hidden="true" />
 
           <header className="text-center login3d__z3">
-            <div className="login3d__status">
-              <span className="login3d__status-dot" aria-hidden="true" />
-              {status}
-            </div>
             <div className="login3d__logo">
               <img src={mainLogo} alt="AgroShift AI logo" />
             </div>
             <h1 className="login3d__brand">AgroShift AI</h1>
-            <p className="login3d__tagline">Earth data · Smarter farms</p>
           </header>
 
           <div className="text-center login3d__z2">
-            <h2 className="login3d__title mt-4">{title}</h2>
-            <p className="login3d__subtitle">{subtitle}</p>
-            {chips && (
-              <div className="login3d__chips" aria-hidden="true">
-                {chips.map((c) => (
-                  <span key={c} className="login3d__chip">{c}</span>
-                ))}
-              </div>
-            )}
+            <h2 className="login3d__title mt-3">{title}</h2>
+            {subtitle && <p className="login3d__subtitle">{subtitle}</p>}
           </div>
 
-          {children}
-
-          <div className="login3d__telemetry login3d__z1" aria-hidden="true">
-            <span>ORBIT · LEO 705 KM</span>
-            <span>NDVI · SOIL · RAIN</span>
-          </div>
+          <div className="mt-7 login3d__z1">{children}</div>
         </div>
       </div>
     </div>
