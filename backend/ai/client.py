@@ -293,6 +293,54 @@ def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = 
     return None
 
 
+def ai_diagnostics() -> dict:
+    """Small, safe status check for /api/health/?ai=1. Never returns the key.
+
+    For Gemini: lists the Flash models this key can use and times one tiny answer, so a slow
+    or broken setup shows up without reading server logs.
+    """
+    info = {"provider": provider(), "key_configured": False}
+    if info["provider"] != "gemini":
+        info["key_configured"] = bool(_setting("LLM_API_KEY"))
+        return info
+    api_key = _setting("GEMINI_API_KEY") or _setting("LLM_API_KEY")
+    info["key_configured"] = bool(api_key)
+    if not api_key:
+        return info
+    import requests
+
+    headers = {"x-goog-api-key": api_key}
+    started = time.monotonic()
+    try:
+        resp = requests.get("https://generativelanguage.googleapis.com/v1beta/models",
+                            headers=headers, params={"pageSize": 200}, timeout=10)
+        info["models_status"] = resp.status_code
+        info["models_ms"] = round((time.monotonic() - started) * 1000)
+        if resp.status_code == 200:
+            names = [m.get("name", "").removeprefix("models/") for m in resp.json().get("models", [])]
+            info["flash_models"] = sorted(n for n in names if "flash" in n)[:30]
+        else:
+            info["models_error"] = _error_text(resp)
+    except Exception as exc:
+        info["models_error"] = type(exc).__name__
+    model = _setting("GEMINI_MODEL") or GEMINI_DEFAULT_MODELS[0]
+    started = time.monotonic()
+    try:
+        resp = requests.post(GEMINI_URL.format(model=model), headers=headers, timeout=30, json={
+            "contents": [{"role": "user", "parts": [{"text": "Reply with the word ok."}]}],
+            "generationConfig": {"maxOutputTokens": 20, "thinkingConfig": {"thinkingBudget": 0}},
+        })
+        info["test_model"] = model
+        info["test_status"] = resp.status_code
+        info["test_ms"] = round((time.monotonic() - started) * 1000)
+        if resp.status_code != 200:
+            info["test_error"] = _error_text(resp)
+    except Exception as exc:
+        info["test_error"] = type(exc).__name__
+        info["test_ms"] = round((time.monotonic() - started) * 1000)
+    return info
+
+
 # The answer shape asked from the LLM (plan section 10). Shayan's ai/prompts.py can pass this
 # as json_schema for /api/explain/ and /api/chat/.
 ANSWER_SCHEMA = {

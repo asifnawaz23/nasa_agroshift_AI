@@ -39,7 +39,7 @@ from engine.knowledge import (
 from engine.strategies import build_strategies
 
 from ai import prompts
-from ai.client import ANSWER_SCHEMA, ask_llm
+from ai.client import ANSWER_SCHEMA, ai_diagnostics, ask_llm
 from ai.ratelimit import ai_rate_limited
 
 from .chat_history import save_exchange, user_from_token
@@ -54,12 +54,24 @@ def health_check(request):
     except DatabaseError:
         database = "unavailable"
 
-    return JsonResponse({
+    body = {
         "status": "success" if database == "ok" else "degraded",
         "message": "FieldShift Planner API is running.",
         "database": database,
         "timestamp": timezone.now().isoformat(),
-    }, status=200 if database == "ok" else 503)
+    }
+    # /api/health/?ai=1: check the AI setup (rate limited like the AI endpoints)
+    if request.GET.get("ai") == "1":
+        from django.core.cache import cache
+        from ai.ratelimit import client_ip
+
+        key = f"ai-diag:{client_ip(request)}"
+        cache.add(key, 0, 600)
+        if cache.incr(key) <= 5:  # at most 5 checks per 10 minutes per visitor
+            body["ai"] = ai_diagnostics()
+        else:
+            body["ai"] = {"error": "Too many AI checks, try again in 10 minutes."}
+    return JsonResponse(body, status=200 if database == "ok" else 503)
 
 
 def _error_response(message, errors=None, status=400):
