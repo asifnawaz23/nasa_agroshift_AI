@@ -27,7 +27,9 @@ export function firstFieldError(errors) {
 }
 
 async function request(path, { method = 'GET', body, auth = false } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+  // FormData (file uploads): let the browser set the multipart Content-Type itself
+  const isForm = body instanceof FormData;
+  const headers = isForm ? {} : { 'Content-Type': 'application/json' };
 
   if (auth) {
     const token = localStorage.getItem('token');
@@ -39,7 +41,7 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
     response = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body: isForm ? body : body ? JSON.stringify(body) : undefined,
     });
   } catch {
     throw new ApiError(
@@ -77,8 +79,15 @@ export const explainAnalysis = (analysis, lang = 'en') =>
   request('/explain/', { method: 'POST', body: { analysis, lang } });
 
 // POST /api/chat/  -> { reply }
-export const sendChatMessage = (message, analysis = null, lang = 'en') =>
-  request('/chat/', { method: 'POST', body: { message, analysis, lang } });
+// `messages` = the whole conversation [{ role: 'user' | 'assistant', content }],
+// ending with the farmer's newest question (a plain string also works).
+export const sendChatMessage = (messages, analysis = null, lang = 'en') =>
+  request('/chat/', {
+    method: 'POST',
+    body: typeof messages === 'string'
+      ? { message: messages, analysis, lang }
+      : { messages, analysis, lang },
+  });
 
 /* ---------------- Auth APIs ---------------- */
 
@@ -103,3 +112,14 @@ export const logout = () => request('/auth/logout/', { method: 'POST', auth: tru
 
 // GET /api/auth/me/  (needs token) -> { user }
 export const getMe = () => request('/auth/me/', { auth: true });
+
+// POST /api/auth/profile-picture/  (needs token, multipart) -> { user } with profile_picture URL
+export const uploadProfilePicture = (file) => {
+  const form = new FormData();
+  form.append('profile_picture', file);
+  return request('/auth/profile-picture/', { method: 'POST', body: form, auth: true });
+};
+
+// DELETE /api/auth/profile-picture/  (needs token) -> { user }
+export const removeProfilePicture = () =>
+  request('/auth/profile-picture/', { method: 'DELETE', auth: true });

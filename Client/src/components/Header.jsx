@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import ProfileModal from './ProfileModal';
+import Avatar from './Avatar';
 import { getHealth } from '../services/api';
 
 /*
@@ -10,7 +11,7 @@ import { getHealth } from '../services/api';
     onMenuClick – opens the mobile sidebar
 */
 export default function Header({ title, onMenuClick }) {
-  const email = useSelector((s) => s.auth.user?.email) ?? 'farmer';
+  const user = useSelector((s) => s.auth.user);
   const [profileOpen, setProfileOpen] = useState(false);
 
   // GET /api/health/ -> is the backend reachable? (re-checked every 30 s)
@@ -76,11 +77,11 @@ export default function Header({ title, onMenuClick }) {
         <button
           type="button"
           onClick={() => setProfileOpen(true)}
-          className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-300 to-green-500 text-slate-900 flex items-center justify-center font-bold text-sm uppercase ring-2 ring-white shadow hover:ring-green-300 transition"
+          className="rounded-full ring-2 ring-white shadow hover:ring-green-300 transition"
           title="View profile"
           aria-label="View profile"
         >
-          {email[0]}
+          <Avatar user={user} size="w-9 h-9 text-sm" />
         </button>
       </div>
 

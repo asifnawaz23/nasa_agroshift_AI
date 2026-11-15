@@ -4,6 +4,7 @@ import { logout } from '../features/auth/authSlice';
 import mainLogo from '../assets/mainLogo.jpg';
 import { NAV_ITEMS, icon } from './navItems';
 import { logout as logoutApi } from '../services/api';
+import Avatar from './Avatar';
 
 /*
   Dashboard sidebar.
@@ -26,7 +27,8 @@ export default function Sidebar({
 }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const email = useSelector((s) => s.auth.user?.email) ?? 'farmer';
+  const user = useSelector((s) => s.auth.user);
+  const email = user?.email ?? 'farmer';
 
   // On desktop, hide text when minimized. The mobile drawer always shows everything.
   const hideWhenMin = collapsed ? 'lg:hidden' : '';
@@ -160,12 +162,9 @@ export default function Sidebar({
             collapsed ? 'lg:flex-col lg:px-0' : ''
           }`}
         >
-          <div
-            className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-amber-300 to-green-500 text-slate-900 flex items-center justify-center font-bold text-sm uppercase"
-            title={email}
-          >
-            {email[0]}
-          </div>
+          <span title={email}>
+            <Avatar user={user} size="w-9 h-9 text-sm" />
+          </span>
           <p className={`flex-1 min-w-0 text-sm text-white/80 truncate ${hideWhenMin}`} title={email}>
             {email}
           </p>

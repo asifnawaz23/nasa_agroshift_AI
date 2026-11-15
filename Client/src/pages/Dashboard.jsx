@@ -10,6 +10,7 @@ import Charts from '../components/Charts';
 import { mockAnalysis } from '../data/mockAnalysis';
 import { analyzeFarm, explainAnalysis } from '../services/api';
 import ChatPanel from '../components/ChatPanel';
+import ExplanationCard from '../components/ExplanationCard';
 import './Dashboard.css';
 
 /* ---------- Small building blocks ---------- */
@@ -316,14 +317,13 @@ export default function Dashboard() {
               )}
 
               {/* POST /api/explain/ result */}
-              {explanation?.explanation && (
-                <div className="flex gap-3 p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-200">
-                  <span className="text-2xl" aria-hidden="true">💡</span>
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-900">Why this recommendation</p>
-                    <p className="mt-1 text-sm text-slate-700 leading-relaxed">{explanation.explanation}</p>
-                  </div>
-                </div>
+              {/* `key` resets the saved translations when a new analysis comes in */}
+              {explanation && (
+                <ExplanationCard
+                  key={analysis?.analysis_id}
+                  analysis={analysis}
+                  initial={explanation}
+                />
               )}
 
               {/* Alerts from the analysis: { severity_label, reason, action, month, crops, ... } */}

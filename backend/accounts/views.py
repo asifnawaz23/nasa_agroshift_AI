@@ -4,11 +4,18 @@ from django.db import IntegrityError, transaction
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import LoginSerializer, SignupSerializer, user_payload
+from .models import UserProfile
+from .serializers import (
+    LoginSerializer,
+    ProfilePictureSerializer,
+    SignupSerializer,
+    user_payload,
+)
 
 
 def _error(message, errors=None, http_status=status.HTTP_400_BAD_REQUEST):
@@ -44,7 +51,7 @@ class SignupView(APIView):
             {
                 "status": "success",
                 "message": "Account created.",
-                "user": user_payload(user),
+                "user": user_payload(user, request),
                 "token": token.key,
             },
             status=status.HTTP_201_CREATED,
@@ -80,7 +87,7 @@ class LoginView(APIView):
             {
                 "status": "success",
                 "message": "Logged in.",
-                "user": user_payload(user),
+                "user": user_payload(user, request),
                 "token": token.key,
             }
         )
@@ -104,4 +111,49 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({"status": "success", "user": user_payload(request.user)})
+        return Response({"status": "success", "user": user_payload(request.user, request)})
+
+
+class ProfilePictureView(APIView):
+    """Profile picture (stored on Cloudinary).
+
+    POST   /api/auth/profile-picture/   multipart form, field "profile_picture"  -> updated user
+    DELETE /api/auth/profile-picture/                                           -> updated user
+    Header: Authorization: Token <token>
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = ProfilePictureSerializer(data=request.data)
+        if not serializer.is_valid():
+            return _error("Upload failed.", serializer.errors)
+
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        old = profile.profile_picture
+        if old:
+            old.delete(save=False)  # remove the previous image from Cloudinary
+
+        profile.profile_picture = serializer.validated_data["profile_picture"]
+        profile.save()
+
+        return Response({
+            "status": "success",
+            "message": "Profile picture updated.",
+            "user": user_payload(request.user, request),
+        })
+
+    def delete(self, request):
+        profile = UserProfile.objects.filter(user=request.user).first()
+        if profile and profile.profile_picture:
+            profile.profile_picture.delete(save=False)
+            profile.profile_picture = ""
+            profile.save()
+
+        return Response({
+            "status": "success",
+            "message": "Profile picture removed.",
+            "user": user_payload(request.user, request),
+        })
