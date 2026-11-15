@@ -83,3 +83,74 @@ def test_cache_hit_skips_the_api(monkeypatch):
     assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, client=client) == ANSWER
     assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, client=client) == ANSWER
     assert len(messages.calls) == 1
+
+
+# --- Gemini (free tier) -----------------------------------------------------------------------
+
+class FakeResp:
+    def __init__(self, status=200, payload=None):
+        self.status_code, self._payload = status, payload
+
+    def json(self):
+        return self._payload
+
+
+def gemini_ok(answer=ANSWER, finish="STOP"):
+    return FakeResp(200, {"candidates": [{"finishReason": finish,
+                                          "content": {"parts": [{"text": json.dumps(answer)}]}}]})
+
+
+class FakeSession:
+    def __init__(self, *responses):
+        self.responses, self.calls = list(responses), []
+
+    def post(self, url, json=None, timeout=None, headers=None):
+        import copy
+        self.calls.append({"url": url, "json": copy.deepcopy(json), "headers": headers})
+        return self.responses.pop(0)
+
+
+@pytest.fixture
+def gemini_env(monkeypatch):
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+
+
+def test_gemini_key_alone_selects_gemini(gemini_env):
+    assert ai_client.provider() == "gemini"
+
+
+def test_gemini_returns_json_and_keeps_key_out_of_url(gemini_env):
+    session = FakeSession(gemini_ok())
+    assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=session, use_cache=False) == ANSWER
+    call = session.calls[0]
+    assert "test-key" not in call["url"]
+    assert call["headers"]["x-goog-api-key"] == "test-key"
+    assert call["json"]["systemInstruction"]["parts"][0]["text"] == "system"
+    assert call["json"]["contents"][0] == {"role": "user", "parts": [{"text": "Why is July risky?"}]}
+    assert call["json"]["generationConfig"]["responseJsonSchema"] == ANSWER_SCHEMA
+
+
+def test_gemini_retries_without_schema_then_next_model(gemini_env):
+    session = FakeSession(FakeResp(404), FakeResp(400), gemini_ok())
+    assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=session, use_cache=False) == ANSWER
+    assert "gemini-flash-latest" in session.calls[0]["url"]
+    assert "gemini-2.5-flash" in session.calls[1]["url"]
+    assert "responseJsonSchema" in session.calls[1]["json"]["generationConfig"]
+    assert "responseJsonSchema" not in session.calls[2]["json"]["generationConfig"]
+
+
+@pytest.mark.parametrize("bad", [
+    FakeResp(429), FakeResp(500), gemini_ok(finish="SAFETY"), gemini_ok(answer={"summary": "x"}),
+])
+def test_gemini_problems_return_none(gemini_env, bad):
+    assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=FakeSession(bad), use_cache=False) is None
+
+
+def test_gemini_network_error_returns_none(gemini_env):
+    class Broken:
+        def post(self, *args, **kwargs):
+            raise TimeoutError()
+    assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=Broken(), use_cache=False) is None

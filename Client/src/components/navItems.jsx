@@ -29,6 +29,11 @@ export const NAV_ITEMS = [
     icon: icon(<><path d="M3 3v18h18" /><rect x="7" y="12" width="3" height="6" rx="1" /><rect x="12" y="8" width="3" height="10" rx="1" /><rect x="17" y="5" width="3" height="13" rx="1" /></>),
   },
   {
+    id: 'whatif',
+    label: 'What-If',
+    icon: icon(<><path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" /><path d="M12 14v3" /></>),
+  },
+  {
     id: 'assistant',
     label: 'AI Assistant',
     icon: icon(<><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /><path d="M8.5 11h.01M12 11h.01M15.5 11h.01" /></>),

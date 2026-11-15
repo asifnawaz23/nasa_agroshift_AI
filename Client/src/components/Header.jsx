@@ -54,14 +54,14 @@ export default function Header({ title, onMenuClick }) {
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                 : 'bg-slate-50 border-slate-200 text-slate-500'
           }`}
-          title={online === false ? 'Backend not reachable — run python manage.py runserver' : undefined}
+          title={online === false ? 'Server not reachable. The free server may be waking up: try again in a minute.' : undefined}
         >
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               online === false ? 'bg-red-500' : online ? 'dash-ping bg-emerald-500' : 'bg-slate-400'
             }`}
           />
-          {online === false ? 'Backend offline' : online ? 'Live Earth data' : 'Connecting…'}
+          {online === false ? 'Server offline' : online ? 'Server online' : 'Connecting…'}
         </div>
         <div className="relative hidden sm:block">
           <svg viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

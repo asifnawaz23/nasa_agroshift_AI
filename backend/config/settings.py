@@ -24,6 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # load_dotenv never overrides a value that is already set, so backend/.env wins,
 # and real environment variables (e.g. on a hosting server) win over both.
 load_dotenv(BASE_DIR / ".env")
+# backend/.env.local is written by `neon deploy` (DATABASE_URL, DATABASE_URL_UNPOOLED).
+load_dotenv(BASE_DIR / ".env.local")
 load_dotenv(BASE_DIR.parent / ".env")
 
 
@@ -115,6 +117,10 @@ if os.getenv("DATABASE_URL"):
     DATABASES = {
         "default": dj_database_url.config(conn_max_age=60, ssl_require=not DEBUG),
     }
+    # Neon's pooled URL goes through PgBouncer in transaction mode, which does not
+    # support server-side cursors (used by QuerySet.iterator()).
+    if "-pooler." in os.getenv("DATABASE_URL", ""):
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 else:
     DATABASES = {
         "default": {
@@ -183,6 +189,11 @@ if not DEBUG:
 # AI explanations (ai/client.py). Empty key = template text only.
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-opus-5-5")
+# Free alternative: a Google AI Studio key in GEMINI_API_KEY (used when LLM_API_KEY is empty,
+# or force it with LLM_PROVIDER=gemini). GEMINI_MODEL is optional.
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "")
 
 # Django REST Framework configuration
 REST_FRAMEWORK = {

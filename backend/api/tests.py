@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pandas as pd
 from django.core.management import call_command
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 
 from datasources.errors import DataSourceTimeout
 
@@ -341,3 +341,18 @@ class PinAlertTests(TestCase):
             summary = pin["alert_summary"]
             self.assertIsNotNone(summary, pin["slug"])
             self.assertIn(summary["worst"], ("low", "moderate", "high", "critical"))
+
+
+class TemplateAnswerDedupTests(SimpleTestCase):
+    def test_same_sentence_from_alert_and_evidence_is_shown_once(self):
+        from ai.prompts import template_answer
+
+        line = "July: Cotton at the flowering stage, while this area averages 17 days above 40 °C."
+        analysis = {
+            "alerts": [{"severity": "critical", "reason": line, "action": "Sow earlier."}],
+            "strategies": [{"key": "current", "name": "Current", "scores": {"overall": 60},
+                            "evidence": [{"text": line, "source": "NASA POWER"}]}],
+            "data_quality": {"confidence": "medium"},
+        }
+        texts = [p["text"] for p in template_answer(analysis, "overview", "en")["points"]]
+        self.assertEqual(texts.count(line), 1)

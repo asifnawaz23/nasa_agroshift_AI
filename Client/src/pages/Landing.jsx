@@ -124,22 +124,23 @@ export default function Landing() {
           <div className="land__card land__card--a">
             <span className="land__card-icon">🌱</span>
             <div>
-              <div className="land__card-label">Crop health</div>
-              <div className="land__card-value">NDVI 0.82<small>▲ 6%</small></div>
+              {/* Real findings from our engine (NASA POWER 2006–2025, Faisalabad pin), not live readings */}
+              <div className="land__card-label">Faisalabad · July heat</div>
+              <div className="land__card-value">17 days<small>&gt; 40 °C</small></div>
             </div>
           </div>
           <div className="land__card land__card--b">
             <span className="land__card-icon">💧</span>
             <div>
-              <div className="land__card-label">Soil moisture</div>
-              <div className="land__card-value">34%<small>optimal</small></div>
+              <div className="land__card-label">Rain vs. water demand</div>
+              <div className="land__card-value">505 mm<small>vs 1,800 mm</small></div>
             </div>
           </div>
           <div className="land__card land__card--c">
-            <span className="land__card-icon">🌦️</span>
+            <span className="land__card-icon">🛰️</span>
             <div>
-              <div className="land__card-label">Rain forecast</div>
-              <div className="land__card-value">In 2 days</div>
+              <div className="land__card-label">NASA POWER record</div>
+              <div className="land__card-value">20 years</div>
             </div>
           </div>
         </div>

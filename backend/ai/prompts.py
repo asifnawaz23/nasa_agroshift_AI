@@ -248,9 +248,17 @@ def template_answer(analysis: dict, section: str = "overview", lang: str = "en")
     if chosen and chosen.get("why_suggested") and section.startswith("strategy:"):
         summary += " " + chosen["why_suggested"]
 
+    # Alerts and strategy evidence often describe the same month in the same words: show it once.
+    seen, unique_points = set(), []
+    for point in points:
+        text_key = " ".join(str(point.get("text", "")).split()).lower()
+        if text_key and text_key not in seen:
+            seen.add(text_key)
+            unique_points.append(point)
+
     return {
         "summary": summary,
-        "points": points[:6],
+        "points": unique_points[:6],
         "actions": list(dict.fromkeys(actions))[:4],
         "needs_expert": list(dict.fromkeys(needs_expert))[:3],
         "confidence": _confidence(analysis),

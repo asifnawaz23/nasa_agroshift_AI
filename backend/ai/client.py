@@ -85,13 +85,31 @@ def _client(api_key, timeout):
     return anthropic.Anthropic(api_key=api_key, timeout=timeout, max_retries=0)
 
 
+def provider() -> str:
+    """Which LLM to call: "anthropic" or "gemini".
+
+    LLM_PROVIDER wins when set. Otherwise a GEMINI_API_KEY with no LLM_API_KEY means Gemini
+    (free tier from Google AI Studio), so adding one env var on Render is enough.
+    """
+    chosen = (_setting("LLM_PROVIDER") or "").strip().lower()
+    if chosen in ("anthropic", "gemini"):
+        return chosen
+    if _setting("GEMINI_API_KEY") and not _setting("LLM_API_KEY"):
+        return "gemini"
+    return "anthropic"
+
+
 def ask_llm(system: str, messages: list, json_schema: dict, timeout: float = DEFAULT_TIMEOUT_S,
-            *, client=None, use_cache: bool = True) -> dict | None:
+            *, client=None, use_cache: bool = True, session=None) -> dict | None:
     """Ask the LLM for a JSON answer that matches `json_schema`. None means: use the template.
 
     messages: [{"role": "user" | "assistant", "content": "..."}], oldest first (the frontend
     keeps the chat history and sends it every time).
     """
+    if client is None and provider() == "gemini":
+        return ask_gemini(system, messages, json_schema, timeout,
+                          session=session, use_cache=use_cache)
+
     api_key = _setting("LLM_API_KEY")
     if client is None and not api_key:
         return None
@@ -159,6 +177,97 @@ def ask_llm(system: str, messages: list, json_schema: dict, timeout: float = DEF
     if use_cache:
         _cache_set(key, answer, response.model)
     return answer
+
+
+# --- Google Gemini (free tier) ---------------------------------------------------------------
+# Plain REST with `requests`, so no extra package. The key goes in a header, never in the URL.
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+# "gemini-flash-latest" follows Google's newest Flash model; the pinned name is a backup in case
+# the alias is not available on a key. Override with GEMINI_MODEL.
+GEMINI_DEFAULT_MODELS = ("gemini-flash-latest", "gemini-2.5-flash")
+
+
+def _gemini_contents(messages):
+    return [{"role": "model" if m.get("role") == "assistant" else "user",
+             "parts": [{"text": str(m.get("content", ""))}]} for m in messages]
+
+
+def _valid_answer(answer, json_schema):
+    if not isinstance(answer, dict):
+        return False
+    return all(key in answer for key in (json_schema or {}).get("required", []))
+
+
+def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = DEFAULT_TIMEOUT_S,
+               *, session=None, use_cache: bool = True) -> dict | None:
+    """Same contract as ask_llm, using the Gemini API. None on any problem (template fallback)."""
+    api_key = _setting("GEMINI_API_KEY") or _setting("LLM_API_KEY")
+    if not api_key:
+        return None
+    models = [_setting("GEMINI_MODEL")] if _setting("GEMINI_MODEL") else list(GEMINI_DEFAULT_MODELS)
+
+    key = cache_key(system, messages, json_schema, "gemini:" + models[0])
+    if use_cache:
+        cached = _cache_get(key)
+        if cached is not None:
+            return cached
+
+    import requests
+
+    http = session or requests
+    started = time.monotonic()
+    for model in models:
+        body = {
+            "systemInstruction": {"parts": [{"text": system}]},
+            "contents": _gemini_contents(messages),
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "responseJsonSchema": json_schema,
+                "temperature": 0.3,
+                "maxOutputTokens": MAX_TOKENS,
+            },
+        }
+        for attempt in ("schema", "plain"):
+            if attempt == "plain":
+                # Some models reject responseJsonSchema: ask for JSON only, then validate below.
+                body["generationConfig"].pop("responseJsonSchema", None)
+            remaining = timeout - (time.monotonic() - started)
+            if remaining <= 1:
+                logger.warning("Gemini out of time budget")
+                return None
+            try:
+                resp = http.post(GEMINI_URL.format(model=model), json=body, timeout=remaining,
+                                 headers={"x-goog-api-key": api_key,
+                                          "Content-Type": "application/json"})
+            except Exception as exc:  # timeout, connection error
+                logger.warning("Gemini request failed: %s", type(exc).__name__)
+                return None
+            if resp.status_code == 404:
+                logger.warning("Gemini model %s not found", model)
+                break  # try the next model name
+            if resp.status_code == 400 and attempt == "schema":
+                continue  # retry without the schema field
+            if resp.status_code != 200:
+                logger.warning("Gemini API error %s", resp.status_code)
+                return None
+            try:
+                data = resp.json()
+                candidate = (data.get("candidates") or [{}])[0]
+                if candidate.get("finishReason") not in (None, "STOP"):
+                    logger.warning("Gemini stopped: %s", candidate.get("finishReason"))
+                    return None
+                text = "".join(p.get("text", "") for p in candidate.get("content", {}).get("parts", []))
+                answer = json.loads(text) if text else None
+            except (ValueError, AttributeError, IndexError, TypeError):
+                answer = None
+            if not _valid_answer(answer, json_schema):
+                logger.warning("Gemini returned no usable JSON")
+                return None
+            logger.info("Gemini answered in %.1fs (model=%s)", time.monotonic() - started, model)
+            if use_cache:
+                _cache_set(key, answer, "gemini:" + model)
+            return answer
+    return None
 
 
 # The answer shape asked from the LLM (plan section 10). Shayan's ai/prompts.py can pass this

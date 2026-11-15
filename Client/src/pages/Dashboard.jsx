@@ -11,6 +11,7 @@ import { mockAnalysis } from '../data/mockAnalysis';
 import { analyzeFarm, explainAnalysis } from '../services/api';
 import ChatPanel from '../components/ChatPanel';
 import ExplanationCard from '../components/ExplanationCard';
+import WhatIfPanel from '../components/WhatIfPanel';
 import './Dashboard.css';
 
 /* ---------- Small building blocks ---------- */
@@ -115,6 +116,10 @@ export default function Dashboard() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState('');
   const [explanation, setExplanation] = useState(null);
+  // What-If: the last request body, today's result, and the simulated result
+  const [basePayload, setBasePayload] = useState(null);
+  const [baselineAnalysis, setBaselineAnalysis] = useState(null);
+  const [scenarioAnalysis, setScenarioAnalysis] = useState(null);
 
   const user = useSelector((s) => s.auth.user);
   const email = user?.email ?? '';
@@ -161,6 +166,9 @@ export default function Dashboard() {
       // 1) POST /api/analyze/ -> strategies, climate, soil, alerts...
       const result = await analyzeFarm(farmData);
       setAnalysis(result);
+      setBasePayload(farmData);
+      setBaselineAnalysis(result);
+      setScenarioAnalysis(null);
       setSubmitted(true);
 
       // 2) POST /api/explain/ -> plain-language summary of the best strategy
@@ -175,6 +183,19 @@ export default function Dashboard() {
       setAnalyzing(false);
     }
   };
+
+  // Called by the What-If sliders (debounced). `isLatest` drops answers to older slider moves.
+  const runScenario = async (scenario, isLatest) => {
+    const result = await analyzeFarm({ ...basePayload, scenario });
+    if (!isLatest()) return;
+    setScenarioAnalysis(result);
+    setAnalysis(result);
+  };
+  const resetScenario = () => {
+    setScenarioAnalysis(null);
+    if (baselineAnalysis) setAnalysis(baselineAnalysis);
+  };
+  const simulated = !!scenarioAnalysis;
 
   const activeLabel = NAV_ITEMS.find((n) => n.id === activeId)?.label ?? 'Overview';
 
@@ -320,8 +341,8 @@ export default function Dashboard() {
               {/* `key` resets the saved translations when a new analysis comes in */}
               {explanation && (
                 <ExplanationCard
-                  key={analysis?.analysis_id}
-                  analysis={analysis}
+                  key={baselineAnalysis?.analysis_id}
+                  analysis={baselineAnalysis ?? analysis}
                   initial={explanation}
                 />
               )}
@@ -329,7 +350,12 @@ export default function Dashboard() {
               {/* Alerts from the analysis: { severity_label, reason, action, month, crops, ... } */}
               {!isMock && analysis?.alerts?.length > 0 && (
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-900">⚠️ Risk alerts for your current rotation</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    ⚠️ Risk alerts for your current rotation
+                    <span className={`ml-2 px-2 py-0.5 text-[11px] font-bold rounded-full border ${simulated ? 'bg-violet-100 text-violet-800 border-violet-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                      {simulated ? 'SIMULATED' : 'HISTORICAL (2006–2025)'}
+                    </span>
+                  </p>
                   <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                     {analysis.alerts.map((a, i) => {
                       const level = (a.severity || '').toLowerCase();
@@ -385,10 +411,27 @@ export default function Dashboard() {
             </div>
           </Section>
 
+          {/* ---------- What-If (scenario re-run of /api/analyze/) ---------- */}
+          <Section
+            id="whatif"
+            step="4"
+            title="What if the climate changes?"
+            subtitle="Test a hotter or drier future for your farm"
+          >
+            <WhatIfPanel
+              key={baselineAnalysis?.analysis_id ?? 'none'}
+              basePayload={basePayload}
+              baselineAnalysis={baselineAnalysis}
+              scenarioAnalysis={scenarioAnalysis}
+              onRun={runScenario}
+              onReset={resetScenario}
+            />
+          </Section>
+
           {/* ---------- AI Assistant (POST /api/chat/) ---------- */}
           <Section
             id="assistant"
-            step="4"
+            step="5"
             title="Farm assistant"
             subtitle="Ask about crops or your analysis"
           >
