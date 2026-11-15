@@ -200,6 +200,8 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS")
 if DEBUG:
     CORS_ALLOWED_ORIGINS += ["http://localhost:5173", "http://127.0.0.1:5173"]
+# Optional: regexes for Vercel preview deployments, e.g. ^https://fieldshift-.*\.vercel\.app$
+CORS_ALLOWED_ORIGIN_REGEXES = _env_list("CORS_ALLOWED_ORIGIN_REGEXES")
 CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS")
 
 # Cloudinary (profile pictures and other uploaded media).

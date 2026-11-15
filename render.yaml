@@ -7,8 +7,11 @@ services:
     runtime: python
     rootDir: backend
     plan: free
+    region: singapore
     buildCommand: ./build.sh
-    startCommand: gunicorn config.wsgi:application --workers 2 --timeout 60
+    # Free instance = 512 MB RAM / 0.1 CPU: one worker (pandas + numpy loaded once) with threads
+    # for concurrency; 120 s timeout leaves room for a cold NASA POWER / SoilGrids fetch.
+    startCommand: gunicorn config.wsgi:application --workers 1 --threads 4 --timeout 120
     healthCheckPath: /api/health/
     envVars:
       - key: PYTHON_VERSION
@@ -27,3 +30,11 @@ services:
         sync: false
       - key: LLM_MODEL
         value: claude-opus-5-5
+      # Profile pictures. Without these, uploads go to local disk, which Render wipes on
+      # every restart / spin-down.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
