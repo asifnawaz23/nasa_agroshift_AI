@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -196,7 +195,8 @@ function AboutContent({ isLoggedIn }) {
 /* ---------- Page ---------- */
 
 export default function About() {
-  const isLoggedIn = useSelector((s) => s.auth.isAuthenticated);
+  // No accounts: the About page always opens inside the app layout
+  const isLoggedIn = true;
   const navigate = useNavigate();
 
   // Links like /about#about-data: scroll to that part of the page (or the top otherwise)

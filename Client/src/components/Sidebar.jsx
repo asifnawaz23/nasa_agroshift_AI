@@ -1,10 +1,6 @@
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { logout } from '../features/auth/authSlice';
 import mainLogo from '../assets/mainLogo.jpg';
-import { NAV_ITEMS, icon } from './navItems';
-import { logout as logoutApi } from '../services/api';
-import Avatar from './Avatar';
+import { NAV_ITEMS } from './navItems';
 
 /*
   Dashboard sidebar.
@@ -25,23 +21,10 @@ export default function Sidebar({
   collapsed = false,
   onToggleCollapse,
 }) {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const user = useSelector((s) => s.auth.user);
-  const email = user?.email ?? 'farmer';
 
   // On desktop, hide text when minimized. The mobile drawer always shows everything.
   const hideWhenMin = collapsed ? 'lg:hidden' : '';
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi(); // POST /api/auth/logout/ — deletes the token on the server
-    } catch {
-      /* still log out locally if the server is unreachable */
-    }
-    dispatch(logout());
-    navigate('/');
-  };
 
   return (
     <>
@@ -158,28 +141,6 @@ export default function Sidebar({
           })}
         </nav>
 
-        {/* User */}
-        <div
-          className={`flex items-center gap-3 px-5 py-4 border-t border-white/10 ${
-            collapsed ? 'lg:flex-col lg:px-0' : ''
-          }`}
-        >
-          <span title={email}>
-            <Avatar user={user} size="w-9 h-9 text-sm" />
-          </span>
-          <p className={`flex-1 min-w-0 text-sm text-white/80 truncate ${hideWhenMin}`} title={email}>
-            {email}
-          </p>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-red-500/80 transition"
-            aria-label="Sign out"
-            title="Sign out"
-          >
-            {icon(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></>)}
-          </button>
-        </div>
       </aside>
     </>
   );

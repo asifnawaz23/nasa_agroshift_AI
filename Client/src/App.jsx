@@ -1,31 +1,18 @@
 
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-import Landing from './pages/Landing.jsx';
 import Dashboard from './pages/Dashboard.jsx';
-import Login from './pages/Login.jsx';
-import Signup from './pages/Signup.jsx';
 import About from "./pages/About.jsx";
-import { useSelector } from 'react-redux';
 import './App.css';
 
 function App() {
-
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
-
+  // No accounts: everyone goes straight to the dashboard.
+  // Old /login and /signup links (bookmarks, shared links) land on the dashboard too.
   return (
     <Routes>
-      
-          {/* Conditional Root Route: 
-          If logged in, show Dashboard. Otherwise, show LandingPage.  */}
-        
-      <Route
-        path="/"
-        element={isAuthenticated ? <Dashboard /> : <Landing />}
-      />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      <Route path="/" element={<Dashboard />} />
       <Route path="/about" element={<About />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
