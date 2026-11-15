@@ -81,13 +81,29 @@ export const explainAnalysis = (analysis, lang = 'en') =>
 // POST /api/chat/  -> { reply }
 // `messages` = the whole conversation [{ role: 'user' | 'assistant', content }],
 // ending with the farmer's newest question (a plain string also works).
-export const sendChatMessage = (messages, analysis = null, lang = 'en') =>
+// When logged in, the backend saves the chat and returns its `conversation_id`;
+// pass it back on the next message to keep adding to the same saved conversation.
+export const sendChatMessage = (messages, analysis = null, lang = 'en', conversationId = null) =>
   request('/chat/', {
     method: 'POST',
-    body: typeof messages === 'string'
-      ? { message: messages, analysis, lang }
-      : { messages, analysis, lang },
+    auth: true,
+    body: {
+      ...(typeof messages === 'string' ? { message: messages } : { messages }),
+      analysis,
+      lang,
+      conversation_id: conversationId,
+    },
   });
+
+// GET /api/chat/conversations/  (needs token) -> { results: [{ id, title, updated_at, message_count }] }
+export const listConversations = () => request('/chat/conversations/', { auth: true });
+
+// GET /api/chat/conversations/:id/  (needs token) -> { conversation, messages: [{ role, content, lang }] }
+export const getConversation = (id) => request(`/chat/conversations/${id}/`, { auth: true });
+
+// DELETE /api/chat/conversations/:id/  (needs token)
+export const deleteConversation = (id) =>
+  request(`/chat/conversations/${id}/`, { method: 'DELETE', auth: true });
 
 /* ---------------- Auth APIs ---------------- */
 

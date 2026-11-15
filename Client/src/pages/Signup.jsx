@@ -66,17 +66,16 @@ export default function Signup() {
 
   return (
     <AuthShell
-      status="Ground station ready"
-      title="Join the mission"
-      subtitle="Create your account to get satellite insights for your farm."
+      title="Create your account"
+      subtitle="Satellite insights for your farm, free to start."
     >
       {serverError && (
-        <div className="login3d__error login3d__z1" role="alert">
+        <div className="login3d__error mb-5" role="alert">
           {serverError}
         </div>
       )}
 
-      <form className="mt-7 space-y-5 login3d__z1" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div>
           <label htmlFor="fullName" className="login3d__label">
             Full name
@@ -151,7 +150,7 @@ export default function Signup() {
         </div>
 
         <button type="submit" className="login3d__btn" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating account…' : '🚀 Create account'}
+          {isSubmitting ? 'Creating account…' : 'Create account'}
         </button>
       </form>
 

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { Link, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { NAV_ITEMS } from '../components/navItems';
 import Header from '../components/Header';
@@ -16,41 +17,75 @@ import './Dashboard.css';
 
 /* ---------- Small building blocks ---------- */
 
-function Section({ id, step, title, subtitle, children }) {
+// Small coloured chip shown next to a section title (e.g. "✓ Selected", "Required")
+const CHIP_TONES = {
+  done: 'bg-green-50 text-green-700 border-green-200',
+  todo: 'bg-amber-50 text-amber-800 border-amber-200',
+  info: 'bg-sky-50 text-sky-700 border-sky-200',
+  muted: 'bg-slate-50 text-slate-500 border-slate-200',
+};
+
+function Section({ id, step, title, subtitle, status, children }) {
   return (
     <section id={id} className="scroll-mt-24 dash-rise">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-700 text-white text-sm font-bold shadow-md shadow-green-600/30">
-          {step}
-        </span>
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-700 text-white text-sm font-bold shadow-md shadow-green-600/30">
+            {step}
+          </span>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+            {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+          </div>
         </div>
+        {status && (
+          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${CHIP_TONES[status.tone]}`}>
+            {status.text}
+          </span>
+        )}
       </div>
       {children}
     </section>
   );
 }
 
-function StatCard({ label, value, hint, icon, tone = 'green' }) {
+function StatCard({ label, value, hint, icon, tone = 'green', example = false, empty = false }) {
   const tones = {
-    green: 'from-green-500/15 to-emerald-500/5 text-green-700',
-    blue: 'from-sky-500/15 to-blue-500/5 text-sky-700',
-    amber: 'from-amber-400/20 to-orange-400/5 text-amber-700',
-    violet: 'from-violet-500/15 to-indigo-500/5 text-violet-700',
+    green: { icon: 'from-green-500/15 to-emerald-500/5 text-green-700', bar: 'from-green-400 to-emerald-600' },
+    blue: { icon: 'from-sky-500/15 to-blue-500/5 text-sky-700', bar: 'from-sky-400 to-blue-600' },
+    amber: { icon: 'from-amber-400/20 to-orange-400/5 text-amber-700', bar: 'from-amber-300 to-orange-500' },
+    violet: { icon: 'from-violet-500/15 to-indigo-500/5 text-violet-700', bar: 'from-violet-400 to-indigo-600' },
   };
   return (
-    <div className="dash-card relative overflow-hidden p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+    <div
+      className={`dash-card relative overflow-hidden p-5 bg-white border rounded-2xl shadow-sm ${
+        example ? 'border-amber-300 border-dashed' : 'border-slate-200/80'
+      }`}
+    >
+      {/* Coloured accent strip */}
+      <span
+        className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${tones[tone].bar} ${empty ? 'opacity-30' : ''}`}
+        aria-hidden="true"
+      />
+      {example && (
+        <span className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-amber-800 bg-amber-100 rounded uppercase">
+          Example
+        </span>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{label}</p>
-          <p className="mt-2 text-xl font-bold text-slate-900 truncate" title={typeof value === 'string' ? value : undefined}>
+          <p
+            className={`mt-2 text-xl font-bold truncate ${empty ? 'text-slate-300' : 'text-slate-900'}`}
+            title={typeof value === 'string' ? value : undefined}
+          >
             {value}
           </p>
           {hint && <p className="mt-1 text-xs text-slate-500 truncate">{hint}</p>}
         </div>
-        <span className={`shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br text-xl ${tones[tone]}`}>
+        <span
+          className={`shrink-0 flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br text-2xl ring-1 ring-black/5 ${tones[tone].icon}`}
+        >
           {icon}
         </span>
       </div>
@@ -58,26 +93,58 @@ function StatCard({ label, value, hint, icon, tone = 'green' }) {
   );
 }
 
-function StepPill({ done, active, children }) {
+/* Progress through the 3 steps, shown in the welcome banner */
+function ProgressTracker({ steps, onStepClick }) {
+  const doneCount = steps.filter((s) => s.done).length;
+  const current = steps.findIndex((s) => !s.done);
   return (
-    <div
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border backdrop-blur
-        ${done
-          ? 'bg-green-400/20 border-green-300/40 text-green-100'
-          : active
-            ? 'bg-white/15 border-white/30 text-white'
-            : 'bg-white/5 border-white/10 text-white/50'}`}
-    >
-      <span
-        className={`flex items-center justify-center w-4 h-4 rounded-full text-[10px]
-          ${done ? 'bg-green-400 text-green-950' : 'bg-white/20 text-white'}`}
-      >
-        {done ? '✓' : ''}
-      </span>
-      {children}
+    <div className="mt-6 max-w-lg">
+      <div className="flex items-center justify-between text-xs font-semibold">
+        <span className="text-white/80">
+          {doneCount === steps.length ? 'All steps complete 🎉' : `Step ${current + 1} of ${steps.length}`}
+        </span>
+        <span className="text-amber-300">{Math.round((doneCount / steps.length) * 100)}%</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-amber-300 via-green-400 to-emerald-500 transition-all duration-700"
+          style={{ width: `${(doneCount / steps.length) * 100}%` }}
+        />
+      </div>
+      <ol className="mt-3 grid grid-cols-3 gap-2">
+        {steps.map((s, i) => (
+          <li key={s.label}>
+            <button
+              type="button"
+              onClick={() => onStepClick(s.target)}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-xs font-semibold border backdrop-blur transition
+                ${s.done
+                  ? 'bg-green-400/15 border-green-300/30 text-green-100'
+                  : i === current
+                    ? 'bg-white/15 border-white/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'}`}
+            >
+              <span
+                className={`flex items-center justify-center w-5 h-5 shrink-0 rounded-full text-[10px] font-bold
+                  ${s.done ? 'bg-green-400 text-green-950' : 'bg-white/20 text-white'}`}
+              >
+                {s.done ? '✓' : i + 1}
+              </span>
+              <span className="truncate">{s.label}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
+
+const DATA_BADGES = [
+  { name: 'NASA POWER', text: 'Climate' },
+  { name: 'SMAP', text: 'Soil moisture' },
+  { name: 'MODIS NDVI', text: 'Vegetation' },
+  { name: 'SoilGrids', text: 'Soil' },
+];
 
 function greeting() {
   const h = new Date().getHours();
@@ -111,8 +178,10 @@ export default function Dashboard() {
   const [activeId, setActiveId] = useState('overview');
   const [farmLocation, setFarmLocation] = useState(null);
   const [submitted, setSubmitted] = useState(false);
-  // Sample data until the farmer runs a real analysis (POST /api/analyze/)
-  const [analysis, setAnalysis] = useState(mockAnalysis);
+  // The farmer's real analysis (POST /api/analyze/) — null until they run one.
+  // Sample data is only shown when they ask for it, and is always labelled "Example".
+  const [analysis, setAnalysis] = useState(null);
+  const [showExample, setShowExample] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState('');
   const [explanation, setExplanation] = useState(null);
@@ -125,7 +194,11 @@ export default function Dashboard() {
   const email = user?.email ?? '';
   const name = user?.full_name?.split(' ')[0] || (email ? email.split('@')[0] : 'Farmer');
 
-  const strategies = analysis?.strategies ?? [];
+  // What the cards and charts display: your real results, else the example (if opened), else nothing
+  const shown = analysis ?? (showExample ? mockAnalysis : null);
+  const isExample = !analysis && showExample;
+
+  const strategies = shown?.strategies ?? [];
   const best = strategies.reduce(
     (a, b) => (b.scores.overall > (a?.scores.overall ?? -1) ? b : a),
     null
@@ -133,7 +206,6 @@ export default function Dashboard() {
   const current = strategies.find((s) => s.key === 'current');
   // Backend scores can be decimals — round to 1 place to avoid 1.7000000000000028
   const gain = best && current ? Math.round((best.scores.overall - current.scores.overall) * 10) / 10 : 0;
-  const isMock = analysis?.data_quality?.status === 'mock';
 
   // Highlight the sidebar item for the section in view
   useEffect(() => {
@@ -156,6 +228,19 @@ export default function Dashboard() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Coming back from another page (e.g. About Us → "Analysis"): scroll to that section
+  const routerLocation = useLocation();
+  const scrollTarget = routerLocation.state?.scrollTo;
+  useEffect(() => {
+    if (!scrollTarget) return;
+    // Jump (not smooth-scroll) on arrival: the page is still loading, which can cut a smooth scroll short
+    const t = setTimeout(() => {
+      setActiveId(scrollTarget);
+      document.getElementById(scrollTarget)?.scrollIntoView({ block: 'start' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [scrollTarget]);
+
   const handleFarmSubmit = async (farmData) => {
     setAnalyzing(true);
     setAnalyzeError('');
@@ -166,6 +251,7 @@ export default function Dashboard() {
       // 1) POST /api/analyze/ -> strategies, climate, soil, alerts...
       const result = await analyzeFarm(farmData);
       setAnalysis(result);
+      setShowExample(false); // real results replace the example
       setBasePayload(farmData);
       setBaselineAnalysis(result);
       setScenarioAnalysis(null);
@@ -232,11 +318,14 @@ export default function Dashboard() {
                   best crop rotation for you.
                 </p>
 
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <StepPill done={!!farmLocation} active={!farmLocation}>Location</StepPill>
-                  <StepPill done={submitted} active={!!farmLocation && !submitted}>Farm details</StepPill>
-                  <StepPill done={submitted} active={false}>Results</StepPill>
-                </div>
+                <ProgressTracker
+                  onStepClick={goTo}
+                  steps={[
+                    { label: 'Location', done: !!farmLocation, target: 'location' },
+                    { label: 'Farm details', done: submitted, target: 'details' },
+                    { label: 'Results', done: !!analysis, target: 'analysis' },
+                  ]}
+                />
 
                 <button
                   type="button"
@@ -264,40 +353,67 @@ export default function Dashboard() {
               <StatCard
                 label="Best strategy"
                 value={best?.name ?? '—'}
-                hint={best ? `Overall score ${best.scores.overall}/100` : undefined}
+                hint={best ? `Overall score ${best.scores.overall}/100` : 'Run an analysis to see this'}
                 icon="🌱"
                 tone="amber"
+                example={isExample}
+                empty={!best}
               />
               <StatCard
                 label="Potential gain"
-                value={gain > 0 ? `+${gain} pts` : '—'}
-                hint="vs your current rotation"
+                value={shown ? (gain > 0 ? `+${gain} pts` : 'No gain') : '—'}
+                hint={shown ? 'vs your current rotation' : 'Run an analysis to see this'}
                 icon="📈"
                 tone="blue"
+                example={isExample}
+                empty={!shown}
               />
               <StatCard
                 label="Data status"
                 value={
-                  isMock
-                    ? 'Sample data'
-                    : analysis?.data_quality?.status === 'complete'
+                  analysis
+                    ? analysis.data_quality?.status === 'complete'
                       ? 'Live analysis'
                       : 'Partial data'
+                    : isExample
+                      ? 'Example data'
+                      : 'No analysis yet'
                 }
-                hint={(analysis?.data_quality?.sources ?? ['NASA POWER', 'SoilGrids']).join(' · ')}
+                hint={(shown?.data_quality?.sources ?? ['NASA POWER', 'SoilGrids']).join(' · ')}
                 icon="🛰️"
                 tone="violet"
+                example={isExample}
+                empty={!shown}
               />
+            </div>
+
+            {/* Data sources strip */}
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-2xl bg-white/70 border border-slate-200/80">
+              <span className="me-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">Powered by</span>
+              {DATA_BADGES.map((d) => (
+                <span
+                  key={d.name}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-slate-50 border border-slate-200"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" aria-hidden="true" />
+                  <span className="font-semibold text-slate-800">{d.name}</span>
+                  <span className="text-slate-500">{d.text}</span>
+                </span>
+              ))}
+              <Link to="/about#about-data" className="ms-auto text-xs font-semibold text-green-700 hover:underline">
+                About the data →
+              </Link>
             </div>
           </section>
 
-          {/* ---------- Location + Details ---------- */}
-          <div className="grid grid-cols-1 gap-10 2xl:grid-cols-2 2xl:gap-8">
+          {/* ---------- Location + Details (side by side on large screens) ---------- */}
+          <div className="grid grid-cols-1 gap-10 xl:grid-cols-2 xl:gap-8 xl:items-start">
             <Section
               id="location"
               step="1"
               title="Farm location"
               subtitle="Search, use GPS, or click on the map"
+              status={farmLocation ? { tone: 'done', text: '✓ Selected' } : { tone: 'todo', text: 'Required' }}
             >
               {/* `isolate` keeps Leaflet's high z-index map layers under the sticky header */}
               <div className="isolate">
@@ -310,6 +426,13 @@ export default function Dashboard() {
               step="2"
               title="Farm details"
               subtitle="A few quick questions about your field"
+              status={
+                submitted
+                  ? { tone: 'done', text: '✓ Submitted' }
+                  : farmLocation
+                    ? { tone: 'todo', text: 'Next step' }
+                    : { tone: 'muted', text: 'Pick a location first' }
+              }
             >
               <FarmerInputForm location={farmLocation} onSubmit={handleFarmSubmit} />
             </Section>
@@ -321,6 +444,15 @@ export default function Dashboard() {
             step="3"
             title="Rotation analysis"
             subtitle="How each strategy scores for your farm"
+            status={
+              analyzing
+                ? { tone: 'info', text: '⏳ Analyzing…' }
+                : analysis
+                  ? { tone: 'done', text: '✓ Live results' }
+                  : isExample
+                    ? { tone: 'todo', text: 'Example' }
+                    : { tone: 'muted', text: 'Waiting for your farm' }
+            }
           >
             <div className="space-y-4">
               {analyzing && (
@@ -348,7 +480,7 @@ export default function Dashboard() {
               )}
 
               {/* Alerts from the analysis: { severity_label, reason, action, month, crops, ... } */}
-              {!isMock && analysis?.alerts?.length > 0 && (
+              {analysis?.alerts?.length > 0 && (
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-slate-900">
                     ⚠️ Risk alerts for your current rotation
@@ -392,7 +524,7 @@ export default function Dashboard() {
               )}
 
               {/* Data quality warnings */}
-              {!isMock && analysis?.data_quality?.warnings?.length > 0 && (
+              {analysis?.data_quality?.warnings?.length > 0 && (
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data notes</p>
                   <ul className="mt-1 list-disc pl-5 text-sm text-slate-600 space-y-0.5">
@@ -403,9 +535,83 @@ export default function Dashboard() {
                 </div>
               )}
 
-              <Charts analysis={analysis} />
+              {/* Example banner — makes it impossible to mistake sample numbers for your farm */}
+              {isExample && (
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 border-2 border-dashed border-amber-300">
+                  <p className="text-sm text-amber-900">
+                    <span className="font-bold">EXAMPLE — not your farm.</span> These are sample numbers
+                    to show what the analysis looks like.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowExample(false)}
+                      className="px-3 py-1.5 text-xs font-semibold text-amber-900 bg-white border border-amber-300 rounded-lg hover:bg-amber-100"
+                    >
+                      Clear example
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => goTo(farmLocation ? 'details' : 'location')}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700"
+                    >
+                      Analyze my farm
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              {analysis?.disclaimer && !isMock && (
+              {shown ? (
+                <Charts analysis={shown} />
+              ) : (
+                !analyzing && (
+                  /* Empty state: no fake numbers before the farmer runs an analysis */
+                  <div className="p-8 text-center bg-white border-2 border-dashed border-slate-200 rounded-2xl">
+                    <span className="text-4xl" aria-hidden="true">🌾</span>
+                    <h3 className="mt-3 text-lg font-bold text-slate-900">Your results will appear here</h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      We compare crop-rotation strategies for your exact field using NASA climate and soil data.
+                    </p>
+
+                    <ol className="mt-6 grid gap-3 text-left sm:grid-cols-3 max-w-2xl mx-auto">
+                      {[
+                        ['1', 'Pick your farm', farmLocation ? 'Done ✓' : 'Search or click on the map'],
+                        ['2', 'Add farm details', 'Crop, water and your main goal'],
+                        ['3', 'Analyze', 'Scores, risk alerts and advice'],
+                      ].map(([n, title, text]) => (
+                        <li key={n} className="flex gap-3 p-3 rounded-xl bg-slate-50">
+                          <span className="flex items-center justify-center w-7 h-7 shrink-0 rounded-lg bg-green-600 text-white text-sm font-bold">
+                            {n}
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">{title}</p>
+                            <p className="text-xs text-slate-500">{text}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+
+                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => goTo(farmLocation ? 'details' : 'location')}
+                        className="px-5 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700"
+                      >
+                        {farmLocation ? 'Add farm details →' : 'Start with your location →'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowExample(true)}
+                        className="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50"
+                      >
+                        See an example
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
+
+              {analysis?.disclaimer && (
                 <p className="text-xs text-slate-500">{analysis.disclaimer}</p>
               )}
             </div>
@@ -434,8 +640,10 @@ export default function Dashboard() {
             step="5"
             title="Farm assistant"
             subtitle="Ask about crops or your analysis"
+            status={{ tone: 'info', text: 'EN · اردو · سنڌي · پنجابی' }}
           >
-            <ChatPanel analysis={isMock ? null : analysis} />
+            {/* Only real results go to the assistant — never the example */}
+            <ChatPanel analysis={analysis} />
           </Section>
 
         </main>

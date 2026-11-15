@@ -126,7 +126,9 @@ export default function Sidebar({
                 type="button"
                 disabled={item.soon}
                 onClick={() => {
-                  onNavigate?.(item.id);
+                  // Items with a `path` are separate pages (e.g. About Us); others are dashboard sections
+                  if (item.path) navigate(item.path);
+                  else onNavigate?.(item.id);
                   onClose?.();
                 }}
                 title={collapsed ? item.label : undefined}
