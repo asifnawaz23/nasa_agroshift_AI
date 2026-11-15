@@ -182,9 +182,13 @@ def ask_llm(system: str, messages: list, json_schema: dict, timeout: float = DEF
 # --- Google Gemini (free tier) ---------------------------------------------------------------
 # Plain REST with `requests`, so no extra package. The key goes in a header, never in the URL.
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-# "gemini-flash-latest" follows Google's newest Flash model; the pinned name is a backup in case
-# the alias is not available on a key. Override with GEMINI_MODEL.
-GEMINI_DEFAULT_MODELS = ("gemini-flash-latest", "gemini-2.5-flash")
+# Tried in order. Lite models answer in a few seconds on the free tier; the live check
+# (/api/health/?ai=1) showed "gemini-flash-latest" hanging for 30 s+. A model that is missing
+# (404) or too slow is skipped. Override with GEMINI_MODEL (one name, or several comma-separated).
+GEMINI_DEFAULT_MODELS = ("gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash",
+                         "gemini-flash-latest")
+# Longest wait for one model before trying the next one.
+GEMINI_PER_MODEL_S = 15
 # Seconds for one Gemini answer (GEMINI_TIMEOUT overrides). Gunicorn allows 120 s per request.
 GEMINI_TIMEOUT_S = 40
 
@@ -208,13 +212,18 @@ def _valid_answer(answer, json_schema):
     return all(key in answer for key in (json_schema or {}).get("required", []))
 
 
+def _gemini_models():
+    custom = [m.strip() for m in str(_setting("GEMINI_MODEL") or "").split(",") if m.strip()]
+    return custom or list(GEMINI_DEFAULT_MODELS)
+
+
 def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = DEFAULT_TIMEOUT_S,
                *, session=None, use_cache: bool = True) -> dict | None:
     """Same contract as ask_llm, using the Gemini API. None on any problem (template fallback)."""
     api_key = _setting("GEMINI_API_KEY") or _setting("LLM_API_KEY")
     if not api_key:
         return None
-    models = [_setting("GEMINI_MODEL")] if _setting("GEMINI_MODEL") else list(GEMINI_DEFAULT_MODELS)
+    models = _gemini_models()
 
     key = cache_key(system, messages, json_schema, "gemini:" + models[0])
     if use_cache:
@@ -232,6 +241,7 @@ def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = 
         timeout = max(timeout, GEMINI_TIMEOUT_S)
     started = time.monotonic()
     for model in models:
+        model_started = time.monotonic()
         # Newest settings first. Flash models "think" before answering by default, which is
         # slow; turn it off (older models: thinkingBudget 0, newer ones: thinkingLevel). A 400
         # means the model does not know that field, so drop it and try the next variant.
@@ -256,13 +266,16 @@ def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = 
             if remaining <= 1:
                 logger.warning("Gemini out of time budget")
                 return None
+            wait = min(remaining, GEMINI_PER_MODEL_S - (time.monotonic() - model_started))
+            if wait <= 1:
+                break  # this model already used its share: try the next one
             try:
-                resp = http.post(GEMINI_URL.format(model=model), json=body, timeout=remaining,
+                resp = http.post(GEMINI_URL.format(model=model), json=body, timeout=wait,
                                  headers={"x-goog-api-key": api_key,
                                           "Content-Type": "application/json"})
-            except Exception as exc:  # timeout, connection error
-                logger.warning("Gemini request failed: %s", type(exc).__name__)
-                return None
+            except Exception as exc:  # timeout, connection error: try the next model
+                logger.warning("Gemini %s request failed: %s", model, type(exc).__name__)
+                break
             if resp.status_code == 404:
                 logger.warning("Gemini model %s not found", model)
                 break  # try the next model name
@@ -286,7 +299,7 @@ def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = 
             if not _valid_answer(answer, json_schema):
                 logger.warning("Gemini returned no usable JSON")
                 return None
-            logger.info("Gemini answered in %.1fs (model=%s)", time.monotonic() - started, model)
+            logger.warning("Gemini answered in %.1fs (model=%s)", time.monotonic() - started, model)
             if use_cache:
                 _cache_set(key, answer, "gemini:" + model)
             return answer
@@ -323,21 +336,24 @@ def ai_diagnostics() -> dict:
             info["models_error"] = _error_text(resp)
     except Exception as exc:
         info["models_error"] = type(exc).__name__
-    model = _setting("GEMINI_MODEL") or GEMINI_DEFAULT_MODELS[0]
-    started = time.monotonic()
-    try:
-        resp = requests.post(GEMINI_URL.format(model=model), headers=headers, timeout=30, json={
-            "contents": [{"role": "user", "parts": [{"text": "Reply with the word ok."}]}],
-            "generationConfig": {"maxOutputTokens": 20, "thinkingConfig": {"thinkingBudget": 0}},
-        })
-        info["test_model"] = model
-        info["test_status"] = resp.status_code
-        info["test_ms"] = round((time.monotonic() - started) * 1000)
-        if resp.status_code != 200:
-            info["test_error"] = _error_text(resp)
-    except Exception as exc:
-        info["test_error"] = type(exc).__name__
-        info["test_ms"] = round((time.monotonic() - started) * 1000)
+    info["tests"] = []
+    for model in _gemini_models():
+        started = time.monotonic()
+        result = {"model": model}
+        try:
+            resp = requests.post(GEMINI_URL.format(model=model), headers=headers, timeout=10, json={
+                "contents": [{"role": "user", "parts": [{"text": "Reply with the word ok."}]}],
+                "generationConfig": {"maxOutputTokens": 20},
+            })
+            result["status"] = resp.status_code
+            if resp.status_code != 200:
+                result["error"] = _error_text(resp)
+        except Exception as exc:
+            result["error"] = type(exc).__name__
+        result["ms"] = round((time.monotonic() - started) * 1000)
+        info["tests"].append(result)
+        if result.get("status") == 200:
+            break  # the first working model is the one the app will use
     return info
 
 
