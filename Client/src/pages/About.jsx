@@ -8,7 +8,7 @@ import mainLogo from '../assets/mainLogo.jpg';
 import member1 from '../assets/team/member1.png';
 import member2 from '../assets/team/member2.webp';
 import member3 from '../assets/team/member3.jpeg';
-import member4 from '../assets/team/member4.png';
+import member4 from '../assets/team/member4.webp';
 import member5 from '../assets/team/member5.webp';
 import member6 from '../assets/team/member6.webp';
 import './Dashboard.css';
@@ -36,10 +36,10 @@ const DATA_SOURCES = [
 // Optional `zoom` + `focus` (x% y% of the face) zoom wide shots in so every card shows a portrait.
 const TEAM = [
   { name: 'Shayan Khan', team: 'Backend', role: 'Tech lead — API, scoring, AI endpoints', photo: member1 },
-  { name: 'Asif Nawaz', team: 'Backend', role: 'Climate engine, What-If scenarios, alerts', photo: member5, zoom: 1.7, focus: '50% 47%' },
+  { name: 'Muhammad Asif Nawaz', team: 'Backend', role: 'Climate engine, What-If scenarios, alerts', photo: member5, zoom: 1.7, focus: '50% 47%' },
   { name: 'Aman Ullah', team: 'Backend', role: 'NASA data sources, caching, AI client', photo: member3 },
   { name: 'Abdul Rehman', team: 'Backend', role: 'Crop knowledge base, ground data, tests', photo: member6 },
-  { name: 'Talha Ikram', team: 'Frontend', role: 'Frontend lead — app, map, chat', photo: member4 },
+  { name: 'Talha Ikram', team: 'Frontend', role: 'Frontend lead — app, map, chat', photo: member4, focus: '50% 35%' },
   { name: 'Ahmed Musab', team: 'Frontend', role: 'Charts, polish, story and slides', photo: member2, zoom: 1.35, focus: '50% 28%' },
 ];
 
