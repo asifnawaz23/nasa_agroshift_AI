@@ -14,6 +14,7 @@ import ChatPanel from '../components/ChatPanel';
 import ExplanationCard from '../components/ExplanationCard';
 import WhatIfPanel from '../components/WhatIfPanel';
 import WeatherPanel from '../components/WeatherPanel';
+import StrategyComparison from '../components/StrategyComparison';
 import './Dashboard.css';
 
 /* ---------- Small building blocks ---------- */
@@ -570,7 +571,11 @@ export default function Dashboard() {
               )}
 
               {shown ? (
-                <Charts analysis={shown} />
+                <>
+                  <Charts analysis={shown} />
+                  {/* Step 5–6: side-by-side comparison of the 3 rotations (real results only) */}
+                  {analysis && <StrategyComparison analysis={analysis} />}
+                </>
               ) : (
                 !analyzing && (
                   /* Empty state: no fake numbers before the farmer runs an analysis */

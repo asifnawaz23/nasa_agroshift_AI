@@ -40,6 +40,8 @@ from engine.knowledge import (
 )
 
 from engine.strategies import build_strategies
+from engine.compare import build_comparison
+from engine.knowledge import annual_water_need_mm
 
 from ai import prompts
 from ai.client import ANSWER_SCHEMA, ai_diagnostics, ask_llm
@@ -468,6 +470,17 @@ def analyze(request):
             lang=lang,
             data_tier=data_tier,
         )
+
+        # Step 6: one structured comparison block per strategy (sequence, climate, water,
+        # soil, nitrogen fixing, pest risk, benefits, limitations, evidence, sources).
+        annual_rain = _climate_summary(profile)["annual_rainfall_mm"]
+        current_strategy = next((s for s in strategies if s.get("is_current")), None)
+        current_water = (annual_water_need_mm(current_strategy["rotation"], crops)
+                         if current_strategy else None)
+        for strategy in strategies:
+            strategy["comparison"] = build_comparison(
+                strategy, zone=zone, annual_rain_mm=annual_rain,
+                current_water_mm=current_water, crops=crops)
 
         # Generate alerts for the farmer's current rotation.
         alerts = build_alerts(
