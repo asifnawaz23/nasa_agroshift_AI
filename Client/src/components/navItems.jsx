@@ -40,6 +40,11 @@ export const NAV_ITEMS = [
     icon: icon(<><path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" /><path d="M12 14v3" /></>),
   },
   {
+    id: 'weather',
+    label: 'Weather',
+    icon: icon(<><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 12 3.5 3.5 0 0 0 6 19Z" /><path d="M12 3v1.5M5.6 5.6l1 1M18.4 5.6l-1 1" /></>),
+  },
+  {
     id: 'assistant',
     label: 'AI Assistant',
     icon: icon(<><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /><path d="M8.5 11h.01M12 11h.01M15.5 11h.01" /></>),

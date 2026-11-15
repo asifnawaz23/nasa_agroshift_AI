@@ -13,6 +13,7 @@ import { analyzeFarm, explainAnalysis } from '../services/api';
 import ChatPanel from '../components/ChatPanel';
 import ExplanationCard from '../components/ExplanationCard';
 import WhatIfPanel from '../components/WhatIfPanel';
+import WeatherPanel from '../components/WeatherPanel';
 import './Dashboard.css';
 
 /* ---------- Small building blocks ---------- */
@@ -641,10 +642,20 @@ export default function Dashboard() {
             />
           </Section>
 
+          {/* ---------- Weather for the selected place (Open-Meteo) ---------- */}
+          <Section
+            id="weather"
+            step="5"
+            title="Weather at your farm"
+            subtitle="Current weather and the week ahead (or the week gone by)"
+          >
+            <WeatherPanel location={farmLocation} />
+          </Section>
+
           {/* ---------- AI Assistant (POST /api/chat/) ---------- */}
           <Section
             id="assistant"
-            step="5"
+            step="6"
             title="Farm assistant"
             subtitle="Ask about crops or your analysis"
             status={{ tone: 'info', text: 'EN · اردو · سنڌي · پنجابی' }}
