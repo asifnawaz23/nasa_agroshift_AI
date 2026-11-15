@@ -283,6 +283,11 @@ def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = 
                 logger.info("Gemini 400 for %s variant %d, trying the next one: %s",
                             model, index, _error_text(resp))
                 continue
+            if resp.status_code in (429, 500, 502, 503, 504):
+                # Busy or rate-limited model ("high demand" is common on the free tier):
+                # another model usually answers straight away.
+                logger.warning("Gemini %s busy (%s): %s", model, resp.status_code, _error_text(resp))
+                break
             if resp.status_code != 200:
                 logger.warning("Gemini API error %s: %s", resp.status_code, _error_text(resp))
                 return None

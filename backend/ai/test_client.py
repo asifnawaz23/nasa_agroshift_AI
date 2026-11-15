@@ -145,8 +145,15 @@ def test_gemini_turns_thinking_off_and_falls_back_on_400_and_404(gemini_env):
     assert "thinkingConfig" not in configs[4] and "responseJsonSchema" not in configs[4]
 
 
+def test_gemini_busy_model_falls_through_to_the_next(gemini_env):
+    session = FakeSession(FakeResp(503), gemini_ok())
+    assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=session, use_cache=False) == ANSWER
+    assert "gemini-flash-lite-latest" in session.calls[0]["url"]
+    assert "gemini-3.5-flash-lite" in session.calls[1]["url"]
+
+
 @pytest.mark.parametrize("bad", [
-    FakeResp(429), FakeResp(500), gemini_ok(finish="SAFETY"), gemini_ok(answer={"summary": "x"}),
+    FakeResp(401), FakeResp(403), gemini_ok(finish="SAFETY"), gemini_ok(answer={"summary": "x"}),
 ])
 def test_gemini_problems_return_none(gemini_env, bad):
     assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=FakeSession(bad), use_cache=False) is None
