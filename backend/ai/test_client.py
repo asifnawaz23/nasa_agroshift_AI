@@ -133,13 +133,16 @@ def test_gemini_returns_json_and_keeps_key_out_of_url(gemini_env):
     assert call["json"]["generationConfig"]["responseJsonSchema"] == ANSWER_SCHEMA
 
 
-def test_gemini_retries_without_schema_then_next_model(gemini_env):
-    session = FakeSession(FakeResp(404), FakeResp(400), gemini_ok())
+def test_gemini_turns_thinking_off_and_falls_back_on_400_and_404(gemini_env):
+    session = FakeSession(FakeResp(404), FakeResp(400), FakeResp(400), FakeResp(400), gemini_ok())
     assert ask_llm("system", MESSAGES, ANSWER_SCHEMA, session=session, use_cache=False) == ANSWER
+    configs = [c["json"]["generationConfig"] for c in session.calls]
     assert "gemini-flash-latest" in session.calls[0]["url"]
-    assert "gemini-2.5-flash" in session.calls[1]["url"]
-    assert "responseJsonSchema" in session.calls[1]["json"]["generationConfig"]
-    assert "responseJsonSchema" not in session.calls[2]["json"]["generationConfig"]
+    assert all("gemini-2.5-flash" in c["url"] for c in session.calls[1:])
+    assert configs[1]["thinkingConfig"] == {"thinkingBudget": 0}
+    assert configs[2]["thinkingConfig"] == {"thinkingLevel": "minimal"}
+    assert "thinkingConfig" not in configs[3] and "responseJsonSchema" in configs[3]
+    assert "thinkingConfig" not in configs[4] and "responseJsonSchema" not in configs[4]
 
 
 @pytest.mark.parametrize("bad", [

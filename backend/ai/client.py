@@ -185,6 +185,16 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:ge
 # "gemini-flash-latest" follows Google's newest Flash model; the pinned name is a backup in case
 # the alias is not available on a key. Override with GEMINI_MODEL.
 GEMINI_DEFAULT_MODELS = ("gemini-flash-latest", "gemini-2.5-flash")
+# Seconds for one Gemini answer (GEMINI_TIMEOUT overrides). Gunicorn allows 120 s per request.
+GEMINI_TIMEOUT_S = 40
+
+
+def _error_text(resp):
+    """Short error message from Google (never contains our key)."""
+    try:
+        return str(resp.json().get("error", {}).get("message", ""))[:200]
+    except Exception:
+        return ""
 
 
 def _gemini_contents(messages):
@@ -215,22 +225,33 @@ def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = 
     import requests
 
     http = session or requests
+    # Free-tier Flash models answer in Urdu/Sindhi/Punjabi more slowly than the 15 s default.
+    try:
+        timeout = max(timeout, float(_setting("GEMINI_TIMEOUT", GEMINI_TIMEOUT_S)))
+    except (TypeError, ValueError):
+        timeout = max(timeout, GEMINI_TIMEOUT_S)
     started = time.monotonic()
     for model in models:
-        body = {
-            "systemInstruction": {"parts": [{"text": system}]},
-            "contents": _gemini_contents(messages),
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                "responseJsonSchema": json_schema,
-                "temperature": 0.3,
-                "maxOutputTokens": MAX_TOKENS,
-            },
-        }
-        for attempt in ("schema", "plain"):
-            if attempt == "plain":
-                # Some models reject responseJsonSchema: ask for JSON only, then validate below.
-                body["generationConfig"].pop("responseJsonSchema", None)
+        # Newest settings first. Flash models "think" before answering by default, which is
+        # slow; turn it off (older models: thinkingBudget 0, newer ones: thinkingLevel). A 400
+        # means the model does not know that field, so drop it and try the next variant.
+        variants = [
+            {"responseJsonSchema": json_schema, "thinkingConfig": {"thinkingBudget": 0}},
+            {"responseJsonSchema": json_schema, "thinkingConfig": {"thinkingLevel": "minimal"}},
+            {"responseJsonSchema": json_schema},
+            {},  # JSON only; the answer is still validated below
+        ]
+        for index, extra in enumerate(variants):
+            body = {
+                "systemInstruction": {"parts": [{"text": system}]},
+                "contents": _gemini_contents(messages),
+                "generationConfig": {
+                    "responseMimeType": "application/json",
+                    "temperature": 0.3,
+                    "maxOutputTokens": MAX_TOKENS,
+                    **extra,
+                },
+            }
             remaining = timeout - (time.monotonic() - started)
             if remaining <= 1:
                 logger.warning("Gemini out of time budget")
@@ -245,10 +266,12 @@ def ask_gemini(system: str, messages: list, json_schema: dict, timeout: float = 
             if resp.status_code == 404:
                 logger.warning("Gemini model %s not found", model)
                 break  # try the next model name
-            if resp.status_code == 400 and attempt == "schema":
-                continue  # retry without the schema field
+            if resp.status_code == 400 and index < len(variants) - 1:
+                logger.info("Gemini 400 for %s variant %d, trying the next one: %s",
+                            model, index, _error_text(resp))
+                continue
             if resp.status_code != 200:
-                logger.warning("Gemini API error %s", resp.status_code)
+                logger.warning("Gemini API error %s: %s", resp.status_code, _error_text(resp))
                 return None
             try:
                 data = resp.json()
