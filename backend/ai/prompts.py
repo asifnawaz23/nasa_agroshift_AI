@@ -145,6 +145,59 @@ def system_prompt(trimmed: dict, lang: str) -> str:
             f"<analysis>\n{data}\n</analysis>")
 
 
+# The chat answers general farming questions too (the explain endpoint stays analysis-only).
+CHAT_RULES = """You are AgroShift AI, a friendly farm assistant for smallholder farmers, mainly in Pakistan (Punjab and Sindh). The farmer chats with you in a small app panel.
+
+What you help with: any practical farming topic — crops and varieties, sowing and harvest timing, crop rotation, soil health and soil tests, irrigation and water saving, weeds, pests and plant diseases, weather and climate risks, harvesting and storage, fodder and simple livestock feeding, and how to read this app's analysis.
+
+How to answer:
+- Answer general farming questions from established agronomic knowledge, the way an experienced extension worker would. Label such points "general" with a short source description (e.g. "General agronomy guidance").
+- Facts about THIS farm (its climate, soil, alerts, strategy scores) must come only from the analysis JSON below, labelled "observed" with their source (NASA POWER, SMAP, NDVI, SoilGrids). If the JSON is empty or lacks what is asked, say the farmer can run an analysis in the app for farm-specific numbers. Never invent farm-specific numbers.
+- Local practice varies: when timing, varieties or methods depend on the district or season, say so and suggest confirming with the local agriculture extension office.
+- Never give pesticide, herbicide or fertilizer product names, doses or mixing quantities. Describe the type of control or nutrient and point to the product label, a soil test and the extension office. Put anything needing a field visit, lab test or expert diagnosis in "needs_expert".
+- If a question is not about farming, agriculture, weather for farming or this app, politely say you can only help with farming topics.
+- Keep it practical and short: "summary" is the direct answer in 2-4 plain sentences (this is what the farmer reads first); add a few points and actions only when useful. Set "confidence" honestly."""
+
+
+def chat_system_prompt(trimmed: dict, lang: str) -> str:
+    data = json.dumps(trimmed, ensure_ascii=False, separators=(",", ":"))
+    return (f"{CHAT_RULES}\n\n{LANGUAGE_RULE.get(lang, LANGUAGE_RULE['en'])}\n\n"
+            f"<analysis>\n{data}\n</analysis>")
+
+
+NO_AI_MESSAGE = {
+    "en": ("The AI assistant is not connected yet, so I can only share basic facts about common "
+           "crops (try \"Tell me about wheat\"). Full answers to any farming question will work "
+           "once the AI is switched on."),
+    "ur": ("AI اسسٹنٹ ابھی منسلک نہیں ہے، اس لیے میں صرف عام فصلوں کی بنیادی معلومات دے سکتا ہوں "
+           "(مثلاً \"گندم کے بارے میں بتائیں\")۔ AI چالو ہونے کے بعد کھیتی باڑی کے ہر سوال کا مکمل جواب ملے گا۔"),
+    "sd": ("AI اسسٽنٽ اڃا ڳنڍيل ناهي، تنهنڪري مان رڳو عام فصلن بابت بنيادي ڄاڻ ڏئي سگهان ٿو. "
+           "AI شروع ٿيڻ کان پوءِ پوک بابت هر سوال جو مڪمل جواب ملندو."),
+    "pa": ("AI اسسٹنٹ حالے جُڑیا نئیں، ایس لئی میں صرف عام فصلاں بارے بنیادی معلومات دے سکدا آں۔ "
+           "AI چالو ہون توں بعد کھیتی باڑی دے ہر سوال دا پورا جواب ملے گا۔"),
+}
+
+
+# Words that show the farmer wants the basic crop facts we can give without the AI
+_BASIC_CROP_WORDS = (
+    "about", "tell me", "info", "information", "water", "drought", "heat", "tolerance", "need",
+    "بارے", "بتائیں", "بتاؤ", "معلومات", "پانی", "خشک", "گرمی", "ضرورت",  # Urdu
+    "بابت", "ٻڌايو", "ڄاڻ", "پاڻي", "سوڪ", "گرمي", "ضرورت",              # Sindhi
+    "دسو", "لوڑ",                                                          # Punjabi
+)
+
+
+def is_basic_crop_question(question: str) -> bool:
+    q = question.lower()
+    return any(word in q for word in _BASIC_CROP_WORDS)
+
+
+def no_ai_answer(lang: str) -> dict:
+    """Chat fallback when there is no LLM and no crop fact matches the question."""
+    text = NO_AI_MESSAGE.get(lang, NO_AI_MESSAGE["en"])
+    return {"summary": text, "points": [], "actions": [], "needs_expert": [], "confidence": "low"}
+
+
 def explain_messages(section: str) -> list:
     if section.startswith("strategy:"):
         task = (f"Explain the '{section.split(':', 1)[1]}' strategy: why it is suggested, the "
@@ -257,14 +310,25 @@ def template_answer(analysis: dict, section: str = "overview", lang: str = "en")
     }
 
 
+def _crop_names(crop) -> set:
+    """Every way a farmer may name a crop: "Maize (corn)" -> maize, corn; "دھان (چاول)" -> دھان, چاول."""
+    import re
+
+    names = {crop.get("slug", "").replace("_", " ")}
+    for full in (crop.get("name", ""), crop.get("name_ur", "")):
+        full = (full or "").lower()
+        names.add(full)
+        names.update(part.strip() for part in re.split(r"[()]", full))
+    return {n for n in names if len(n) >= 3}
+
+
 def crop_fact_answer(question: str, lang: str) -> dict | None:
     """Chat fallback for a question that names a crop: facts from the crop table."""
     from engine.knowledge import load_crops
 
     q = question.lower()
     for crop in load_crops().values():
-        names = [crop.get("slug", "").lower(), crop.get("name", "").lower(), crop.get("name_ur", "")]
-        if any(name and name in q for name in names):
+        if any(name in q for name in _crop_names(crop)):
             local_name = crop.get('name_ur') or crop['name']
             if lang == "ur":
                 text = (f"{local_name}: پانی کی ضرورت تقریباً "

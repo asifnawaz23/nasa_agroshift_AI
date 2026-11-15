@@ -43,19 +43,17 @@ export default function Login() {
 
   return (
     <AuthShell
-      status="Satellite link active"
-      title="Sign in to mission control"
-      subtitle="Monitor your fields with satellite insights."
-      chips={['🛰️ Satellite imagery', '🌱 Crop health', '🌦️ Climate']}
+      title="Sign in to your account"
+      subtitle="Welcome back to your farm dashboard."
     >
       {serverError && (
-        <div className="login3d__error login3d__z1" role="alert">
+        <div className="login3d__error mb-5" role="alert">
           {serverError}
         </div>
       )}
 
       <form
-        className="mt-7 space-y-5 login3d__z1"
+        className="space-y-5"
         onSubmit={handleSubmit(onSubmit)}
         noValidate
       >
@@ -81,14 +79,9 @@ export default function Login() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="login3d__label">
-              Password
-            </label>
-            <a href="#forgot-password" className="login3d__link mb-1.5">
-              Forgot password?
-            </a>
-          </div>
+          <label htmlFor="password" className="login3d__label">
+            Password
+          </label>
           <PasswordInput
             id="password"
             autoComplete="current-password"
@@ -103,11 +96,6 @@ export default function Login() {
             </p>
           )}
         </div>
-
-        <label htmlFor="remember-me" className="login3d__check">
-          <input id="remember-me" type="checkbox" />
-          Remember me for 30 days
-        </label>
 
         <button type="submit" className="login3d__btn" disabled={isSubmitting}>
           {isSubmitting ? 'Signing in…' : 'Sign in'}

@@ -172,7 +172,9 @@ ANSWER_SCHEMA = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": ["observed", "estimated_cause", "prediction"]},
+                    # "general" = general farming knowledge (chat), not from this farm's data
+                    "type": {"type": "string",
+                             "enum": ["observed", "estimated_cause", "prediction", "general"]},
                     "text": {"type": "string"},
                     "source": {"type": "string"},
                 },

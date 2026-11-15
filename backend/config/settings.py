@@ -147,6 +147,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Argon2 first: Django's recommended hasher, secure and much faster per login than
+# PBKDF2 with 1.2M iterations (~4 s per signup/login on slower machines).
+# Older PBKDF2 passwords still work and are upgraded to Argon2 on the user's next login.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

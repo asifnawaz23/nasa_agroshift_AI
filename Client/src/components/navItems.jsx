@@ -14,6 +14,12 @@ export const NAV_ITEMS = [
     icon: icon(<><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>),
   },
   {
+    id: 'about',
+    label: 'About Us',
+    path: '/about', // its own page, not a section of the dashboard
+    icon: icon(<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
+  },
+  {
     id: 'location',
     label: 'Farm Location',
     icon: icon(<><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" /></>),
@@ -32,5 +38,5 @@ export const NAV_ITEMS = [
     id: 'assistant',
     label: 'AI Assistant',
     icon: icon(<><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /><path d="M8.5 11h.01M12 11h.01M15.5 11h.01" /></>),
-  },
+  }
 ];

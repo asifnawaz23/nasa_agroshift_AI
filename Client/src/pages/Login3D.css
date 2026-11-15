@@ -349,6 +349,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  pointer-events: none;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
   border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(18px) saturate(140%);
@@ -513,6 +514,9 @@
   font-weight: 600;
   color: var(--gold);
   text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
 }
 .login3d__link:hover { color: #ffd27a; text-decoration: underline; }
 
@@ -612,6 +616,9 @@
   text-align: center;
   font-size: 0.85rem;
   color: var(--muted);
+  position: relative;
+  z-index: 5;
+  transform: translateZ(30px);
 }
 
 /* ---------- Signup extras ---------- */

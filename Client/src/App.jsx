@@ -4,7 +4,8 @@ import { Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './pages/Login.jsx';
-import Signup from './pages/Signup.jsx'; 
+import Signup from './pages/Signup.jsx';
+import About from "./pages/About.jsx";
 import { useSelector } from 'react-redux';
 import './App.css';
 
@@ -24,7 +25,7 @@ function App() {
       />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-
+      <Route path="/about" element={<About />} />
     </Routes>
   );
 }

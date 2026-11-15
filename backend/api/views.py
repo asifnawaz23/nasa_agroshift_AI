@@ -42,6 +42,8 @@ from ai import prompts
 from ai.client import ANSWER_SCHEMA, ask_llm
 from ai.ratelimit import ai_rate_limited
 
+from .chat_history import save_exchange, user_from_token
+
 
 def health_check(request):
     """Status + database check (plan section 11). Render's health check calls this."""
@@ -755,12 +757,30 @@ def chat(request):
 
     analysis = analysis or {}
     trimmed = prompts.trim_analysis(analysis, "overview")
-    answer = ask_llm(prompts.system_prompt(trimmed, lang), history, ANSWER_SCHEMA)
+    # Chat rules allow general farming knowledge (any crop/soil/water/pest question);
+    # farm-specific facts still come only from the analysis.
+    answer = ask_llm(prompts.chat_system_prompt(trimmed, lang), history, ANSWER_SCHEMA)
     ai_used = answer is not None
     if not ai_used:
         question = history[-1]["content"]
-        answer = prompts.crop_fact_answer(question, lang)
+        # Crop facts only answer "tell me about X" / water / tolerance questions —
+        # not e.g. "how do I control aphids on cotton?", which needs the AI.
+        answer = (prompts.crop_fact_answer(question, lang)
+                  if prompts.is_basic_crop_question(question) else None)
         if answer is None:
-            answer = prompts.template_answer(analysis, "overview", lang)
+            # Be honest that the AI is off instead of returning an unrelated summary
+            answer = prompts.no_ai_answer(lang)
 
-    return _ai_response(answer, ai_used, reply=answer["summary"])
+    # Logged-in users: save the question + answer so the chat can be reopened later.
+    # Saving must never break the answer itself, so database problems are ignored here.
+    conversation_id = None
+    user = user_from_token(request)
+    if user is not None:
+        try:
+            conversation_id = save_exchange(
+                user, body.get("conversation_id"), history[-1]["content"], answer["summary"], lang
+            )
+        except DatabaseError:
+            conversation_id = None
+
+    return _ai_response(answer, ai_used, reply=answer["summary"], conversation_id=conversation_id)
