@@ -69,7 +69,7 @@ function Legend({ strategies }) {
 
 function Delta({ value, baseline }) {
   if (baseline == null) return <span className="text-gray-400">baseline</span>;
-  const diff = value - baseline;
+  const diff = Math.round((value - baseline) * 10) / 10; // avoid 1.7000000000000028
   if (diff === 0) return <span className="text-gray-500">no change</span>;
   return (
     <span className={diff > 0 ? 'text-emerald-700' : 'text-rose-700'}>
@@ -257,7 +257,6 @@ function ScoreTable({ strategies }) {
 export default function Charts({ analysis = mockAnalysis }) {
   const [showTable, setShowTable] = useState(false);
   const strategies = analysis?.strategies ?? [];
-  const isMock = analysis?.data_quality?.status === 'mock';
 
   if (strategies.length === 0) {
     return (
@@ -269,12 +268,6 @@ export default function Charts({ analysis = mockAnalysis }) {
 
   return (
     <div className="space-y-4">
-      {isMock && (
-        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          Showing sample data — real results will appear once the analysis API is connected.
-        </p>
-      )}
-
       <OverallScores strategies={strategies} />
 
       <Card

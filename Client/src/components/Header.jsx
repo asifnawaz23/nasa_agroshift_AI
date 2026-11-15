@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import ProfileModal from './ProfileModal';
+import Avatar from './Avatar';
+import { getHealth } from '../services/api';
 
 /*
   Dashboard top bar.
@@ -9,8 +11,20 @@ import ProfileModal from './ProfileModal';
     onMenuClick – opens the mobile sidebar
 */
 export default function Header({ title, onMenuClick }) {
-  const email = useSelector((s) => s.auth.user?.email) ?? 'farmer';
+  const user = useSelector((s) => s.auth.user);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // GET /api/health/ -> is the backend reachable? (re-checked every 30 s)
+  const [online, setOnline] = useState(null); // null = checking
+  useEffect(() => {
+    const check = () =>
+      getHealth()
+        .then(() => setOnline(true))
+        .catch(() => setOnline(false));
+    check();
+    const id = setInterval(check, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between gap-4 h-16 px-4 sm:px-8 bg-white/75 backdrop-blur-xl border-b border-slate-200/70">
@@ -32,9 +46,22 @@ export default function Header({ title, onMenuClick }) {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
-          <span className="dash-ping w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          Live Earth data
+        <div
+          className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${
+            online === false
+              ? 'bg-red-50 border-red-200 text-red-700'
+              : online
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                : 'bg-slate-50 border-slate-200 text-slate-500'
+          }`}
+          title={online === false ? 'Backend not reachable — run python manage.py runserver' : undefined}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              online === false ? 'bg-red-500' : online ? 'dash-ping bg-emerald-500' : 'bg-slate-400'
+            }`}
+          />
+          {online === false ? 'Backend offline' : online ? 'Live Earth data' : 'Connecting…'}
         </div>
         <div className="relative hidden sm:block">
           <svg viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -50,11 +77,11 @@ export default function Header({ title, onMenuClick }) {
         <button
           type="button"
           onClick={() => setProfileOpen(true)}
-          className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-300 to-green-500 text-slate-900 flex items-center justify-center font-bold text-sm uppercase ring-2 ring-white shadow hover:ring-green-300 transition"
+          className="rounded-full ring-2 ring-white shadow hover:ring-green-300 transition"
           title="View profile"
           aria-label="View profile"
         >
-          {email[0]}
+          <Avatar user={user} size="w-9 h-9 text-sm" />
         </button>
       </div>
 

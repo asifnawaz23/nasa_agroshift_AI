@@ -52,10 +52,10 @@ pnpm-debug.log*
 # Operating system files
 .DS_Store
 Thumbs.db
-*.exe
 
 # FieldShift local data cache (demo snapshots go in backend/data/prepulled/ instead)
 backend/.cache/
 
 # Editors
 .vscode/
+*.exe

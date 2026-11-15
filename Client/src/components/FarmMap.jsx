@@ -11,6 +11,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { getLocations } from "../services/api";
 
 const DEFAULT_POSITION = [30.3753, 69.3451];
 
@@ -80,6 +81,14 @@ export default function FarmMap({ onLocationSelect }) {
   const [error, setError] = useState("");
   const [layer, setLayer] = useState("satellite");
   const tiles = MAP_LAYERS[layer];
+
+  // GET /api/locations/ -> featured demo locations (one-click buttons)
+  const [featured, setFeatured] = useState([]);
+  useEffect(() => {
+    getLocations()
+      .then((data) => setFeatured((data.results ?? []).filter((l) => l.featured)))
+      .catch(() => setFeatured([])); // optional — hide if backend is down
+  }, []);
 
   const currentPosition = position || DEFAULT_POSITION;
 
@@ -299,6 +308,23 @@ export default function FarmMap({ onLocationSelect }) {
                       {result.display_name}
                     </span>
                   </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Featured locations from the backend */}
+          {featured.length > 0 && results.length === 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {featured.map((loc) => (
+                <button
+                  key={loc.slug}
+                  type="button"
+                  onClick={() => selectPosition([loc.lat, loc.lon], `${loc.name}, ${loc.country}`)}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white/90 backdrop-blur-md rounded-full shadow ring-1 ring-black/5 hover:bg-green-50 hover:text-green-800 transition"
+                  title={`${loc.zone} · ${loc.tier} data`}
+                >
+                  ⭐ {loc.name}
                 </button>
               ))}
             </div>

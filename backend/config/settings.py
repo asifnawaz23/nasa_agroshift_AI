@@ -20,6 +20,10 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from backend/.env first, then the project-root .env.
+# load_dotenv never overrides a value that is already set, so backend/.env wins,
+# and real environment variables (e.g. on a hosting server) win over both.
+load_dotenv(BASE_DIR / ".env")
 load_dotenv(BASE_DIR.parent / ".env")
 
 
@@ -61,6 +65,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'cloudinary_storage',   # uploaded media -> Cloudinary (static files stay on WhiteNoise)
+    'cloudinary',
     #ourapps
     'api.apps.ApiConfig',
     'crops.apps.CropsConfig',
@@ -195,3 +201,20 @@ CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS")
 if DEBUG:
     CORS_ALLOWED_ORIGINS += ["http://localhost:5173", "http://127.0.0.1:5173"]
 CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS")
+
+# Cloudinary (profile pictures and other uploaded media).
+# Credentials live in backend/.env (local) or the host's environment variables (Render).
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
+}
+CLOUDINARY_ENABLED = all(CLOUDINARY_STORAGE.values())
+
+# Django 5.1+ ignores DEFAULT_FILE_STORAGE; uploads use STORAGES["default"].
+# Without Cloudinary credentials, uploads fall back to the local media/ folder.
+if CLOUDINARY_ENABLED:
+    STORAGES["default"] = {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"}
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthShell, { IconInput, PasswordInput } from '../components/AuthShell.jsx';
 import * as yup from 'yup';
@@ -5,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../features/auth/authSlice.js';
+import { login } from '../services/auth';
 
 
 const loginSchema = yup.object().shape({
@@ -15,6 +17,7 @@ const loginSchema = yup.object().shape({
 export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [serverError, setServerError] = useState('');
 
   const {
     register,
@@ -26,15 +29,16 @@ export default function Login() {
   });
 
   // Only runs when the yup schema passes
-  const onSubmit = async ({ email }) => {
-    // TODO: replace with your real authentication API call, e.g.
-    // const { user, token } = await api.login({ email, password });
-    // Never store the password in localStorage — only the user info + token.
-    const user = { email };
-    const token = 'demo-token';
-
-    dispatch(loginSuccess({ user, token }));
-    navigate('/');
+  const onSubmit = async ({ email, password }) => {
+    setServerError('');
+    try {
+      // POST /api/auth/login/ -> { user, token }
+      const { user, token } = await login({ email, password });
+      dispatch(loginSuccess({ user, token }));
+      navigate('/');
+    } catch (err) {
+      setServerError(err.message);
+    }
   };
 
   return (
@@ -44,6 +48,12 @@ export default function Login() {
       subtitle="Monitor your fields with satellite insights."
       chips={['🛰️ Satellite imagery', '🌱 Crop health', '🌦️ Climate']}
     >
+      {serverError && (
+        <div className="login3d__error login3d__z1" role="alert">
+          {serverError}
+        </div>
+      )}
+
       <form
         className="mt-7 space-y-5 login3d__z1"
         onSubmit={handleSubmit(onSubmit)}

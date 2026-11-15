@@ -17,7 +17,8 @@ SECTIONS = ("climate", "water_balance", "stress", "alerts", "scenario", "overvie
 MAX_CHAT_MESSAGES = 12          # history sent to the LLM (most recent)
 MAX_MESSAGE_CHARS = 2000
 
-LANGUAGE_NAMES = {"en": "English", "ur": "Urdu"}
+LANGUAGE_NAMES = {"en": "English", "ur": "Urdu", "sd": "Sindhi", "pa": "Punjabi"}
+SUPPORTED_LANGS = tuple(LANGUAGE_NAMES)
 MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August",
              "September", "October", "November", "December"]
 
@@ -38,6 +39,14 @@ LANGUAGE_RULE = {
     "ur": ("Write every text field in Urdu (Urdu script), in natural, simple language a farmer in "
            "Punjab or Sindh would use, not a word-for-word translation. Crop names, numbers and "
            "units can stay as they are commonly written (e.g. 35 °C, 107 mm)."),
+    "sd": ("Write every text field in Sindhi (Sindhi Perso-Arabic script, as used in Sindh, "
+           "Pakistan), in natural, simple language a farmer in Sindh would use, not a word-for-word "
+           "translation. Crop names, numbers and units can stay as they are commonly written "
+           "(e.g. 35 °C, 107 mm)."),
+    "pa": ("Write every text field in Punjabi using Shahmukhi script (as written in Punjab, "
+           "Pakistan), in natural, simple language a farmer in Punjab would use, not a word-for-word "
+           "translation. Crop names, numbers and units can stay as they are commonly written "
+           "(e.g. 35 °C, 107 mm)."),
 }
 
 SECTION_TASKS = {
@@ -218,10 +227,20 @@ def template_answer(analysis: dict, section: str = "overview", lang: str = "en")
         needs_expert += [r for r in (chosen.get("local_review") or [])[:3] if isinstance(r, str)]
 
     best = best_strategy(analysis)
+    # Without the LLM only this one summary line is translated; the points and actions
+    # stay in the language the analysis was written in.
     if lang == "ur":
         summary = "یہ خلاصہ آپ کے تجزیے کے اعداد و شمار سے بنا ہے (AI دستیاب نہیں)۔"
         if best:
             summary += f" {best.get('name')} کا مجموعی اسکور {best['scores']['overall']}/100 ہے، جو سب سے زیادہ ہے۔"
+    elif lang == "sd":
+        summary = "هي خلاصو توهان جي تجزيي جي انگن اکرن مان ٺهيل آهي (AI موجود ناهي)."
+        if best:
+            summary += f" {best.get('name')} جو مجموعي اسڪور {best['scores']['overall']}/100 آهي، جيڪو سڀ کان وڌيڪ آهي."
+    elif lang == "pa":
+        summary = "ایہ خلاصہ تہاڈے تجزیے دے انکڑیاں توں بنیا اے (AI دستیاب نئیں)۔"
+        if best:
+            summary += f" {best.get('name')} دا کُل سکور {best['scores']['overall']}/100 اے، جیہڑا سب توں ودھ اے۔"
     else:
         summary = "This summary is built from your analysis data (AI explanation not available)."
         if best:
@@ -246,10 +265,19 @@ def crop_fact_answer(question: str, lang: str) -> dict | None:
     for crop in load_crops().values():
         names = [crop.get("slug", "").lower(), crop.get("name", "").lower(), crop.get("name_ur", "")]
         if any(name and name in q for name in names):
+            local_name = crop.get('name_ur') or crop['name']
             if lang == "ur":
-                text = (f"{crop.get('name_ur') or crop['name']}: پانی کی ضرورت تقریباً "
+                text = (f"{local_name}: پانی کی ضرورت تقریباً "
                         f"{crop.get('water_need_mm')} ملی میٹر، خشک سالی برداشت "
                         f"{crop.get('drought_tolerance')}/5، گرمی برداشت {crop.get('heat_tolerance')}/5۔")
+            elif lang == "sd":
+                text = (f"{local_name}: پاڻيءَ جي ضرورت لڳ ڀڳ "
+                        f"{crop.get('water_need_mm')} ملي ميٽر، سوڪ برداشت "
+                        f"{crop.get('drought_tolerance')}/5، گرمي برداشت {crop.get('heat_tolerance')}/5.")
+            elif lang == "pa":
+                text = (f"{local_name}: پانی دی لوڑ تقریباً "
+                        f"{crop.get('water_need_mm')} ملی میٹر، سوکے نوں برداشت "
+                        f"{crop.get('drought_tolerance')}/5، گرمی نوں برداشت {crop.get('heat_tolerance')}/5۔")
             else:
                 text = (f"{crop['name']}: water need about {crop.get('water_need_mm')} mm per season, "
                         f"drought tolerance {crop.get('drought_tolerance')}/5, heat tolerance "

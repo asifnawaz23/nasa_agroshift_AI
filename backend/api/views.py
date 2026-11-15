@@ -695,8 +695,9 @@ def explain(request):
     if not isinstance(analysis, dict):
         return _error_response("An analysis object is required.",
                                {"analysis": ["Expected the /api/analyze/ response object."]})
-    if lang not in ("en", "ur"):
-        return _error_response("Unsupported language.", {"lang": ["Use en or ur."]})
+    if lang not in prompts.SUPPORTED_LANGS:
+        return _error_response("Unsupported language.",
+                               {"lang": [f"Use one of {', '.join(prompts.SUPPORTED_LANGS)}."]})
     if not prompts.is_valid_section(section):
         return _error_response(
             "Unknown section.",
@@ -739,8 +740,9 @@ def chat(request):
     if messages is None and isinstance(body.get("message"), str):
         messages = [{"role": "user", "content": body["message"]}]
 
-    if lang not in ("en", "ur"):
-        return _error_response("Unsupported language.", {"lang": ["Use en or ur."]})
+    if lang not in prompts.SUPPORTED_LANGS:
+        return _error_response("Unsupported language.",
+                               {"lang": [f"Use one of {', '.join(prompts.SUPPORTED_LANGS)}."]})
     if analysis is not None and not isinstance(analysis, dict):
         return _error_response("Analysis must be a JSON object or null.",
                                {"analysis": ["Expected an object or null."]})

@@ -1,15 +1,25 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import AuthShell, { IconInput, PasswordInput } from '../components/AuthShell.jsx';
-import * as yup from 'yup'
-import { useForm } from 'react-hook-form'
-import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup';
+import { useForm, useWatch } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { loginSuccess } from '../features/auth/authSlice.js';
+import { signup } from '../services/auth';
 
 const signupSchema = yup.object().shape({
-  fullName: yup.string().required(),
-  email: yup.string().email().required(),
-  password: yup.string().required(),
-})
+  fullName: yup.string().trim().required('Full name is required'),
+  email: yup.string().email('Invalid email address').required('Email is required'),
+  password: yup
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .required('Password is required'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password')], 'Passwords do not match')
+    .required('Please confirm your password'),
+});
 
 const STRENGTH_LABELS = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
 
@@ -25,30 +35,34 @@ function passwordScore(pw) {
 }
 
 export default function Signup() {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [serverError, setServerError] = useState('');
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (error) setError('');
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(signupSchema),
+    defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+  });
+
+  const password = useWatch({ control, name: 'password' });
+  const score = passwordScore(password);
+
+  const onSubmit = async (values) => {
+    setServerError('');
+    try {
+      // POST /api/auth/signup/ -> { user, token }  (logs the user straight in)
+      const { user, token } = await signup(values);
+      dispatch(loginSuccess({ user, token }));
+      navigate('/');
+    } catch (err) {
+      setServerError(err.message);
+    }
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Add your registration API call here
-    navigate('/login');
-  };
-
-  const score = passwordScore(formData.password);
-  const confirmMismatch =
-    formData.confirmPassword.length > 0 &&
-    formData.password !== formData.confirmPassword;
 
   return (
     <AuthShell
@@ -56,13 +70,13 @@ export default function Signup() {
       title="Join the mission"
       subtitle="Create your account to get satellite insights for your farm."
     >
-      {error && (
+      {serverError && (
         <div className="login3d__error login3d__z1" role="alert">
-          {error}
+          {serverError}
         </div>
       )}
 
-      <form className="mt-7 space-y-5 login3d__z1" onSubmit={handleSubmit}>
+      <form className="mt-7 space-y-5 login3d__z1" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div>
           <label htmlFor="fullName" className="login3d__label">
             Full name
@@ -70,14 +84,13 @@ export default function Signup() {
           <IconInput
             icon="user"
             id="fullName"
-            name="fullName"
             type="text"
-            required
             autoComplete="name"
-            value={formData.fullName}
-            onChange={handleChange}
             placeholder="Alex Morgan"
+            aria-invalid={!!errors.fullName}
+            {...register('fullName')}
           />
+          {errors.fullName && <p className="login3d__hint">{errors.fullName.message}</p>}
         </div>
 
         <div>
@@ -87,14 +100,13 @@ export default function Signup() {
           <IconInput
             icon="mail"
             id="email"
-            name="email"
             type="email"
-            required
             autoComplete="email"
-            value={formData.email}
-            onChange={handleChange}
             placeholder="you@example.com"
+            aria-invalid={!!errors.email}
+            {...register('email')}
           />
+          {errors.email && <p className="login3d__hint">{errors.email.message}</p>}
         </div>
 
         <div>
@@ -103,30 +115,43 @@ export default function Signup() {
           </label>
           <PasswordInput
             id="password"
-            name="password"
-            required
-            minLength={8}
             autoComplete="new-password"
-            value={formData.password}
-            onChange={handleChange}
             placeholder="Min. 8 characters"
+            aria-invalid={!!errors.password}
+            {...register('password')}
           />
-          {formData.password && (
+          {password && (
             <div className="login3d__strength" data-score={score}>
               <div className="login3d__strength-bars" aria-hidden="true">
                 {[1, 2, 3, 4].map((n) => (
                   <span key={n} className={n <= score ? 'is-on' : ''} />
                 ))}
               </div>
-              <span className="login3d__strength-label">
-                {STRENGTH_LABELS[score]}
-              </span>
+              <span className="login3d__strength-label">{STRENGTH_LABELS[score]}</span>
             </div>
+          )}
+          {errors.password && <p className="login3d__hint">{errors.password.message}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className="login3d__label">
+            Confirm password
+          </label>
+          <PasswordInput
+            icon="shield"
+            id="confirmPassword"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            aria-invalid={!!errors.confirmPassword}
+            {...register('confirmPassword')}
+          />
+          {errors.confirmPassword && (
+            <p className="login3d__hint">{errors.confirmPassword.message}</p>
           )}
         </div>
 
-        <button type="submit" className="login3d__btn">
-          🚀 Create account
+        <button type="submit" className="login3d__btn" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating account…' : '🚀 Create account'}
         </button>
       </form>
 

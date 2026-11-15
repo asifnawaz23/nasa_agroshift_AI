@@ -36,6 +36,11 @@ export const authSlice = createSlice({
       localStorage.setItem('user', JSON.stringify(action.payload.user));
       localStorage.setItem('token', action.payload.token);
     },
+    // Call this when the user's details change (e.g. new profile picture)
+    updateUser: (state, action) => {
+      state.user = { ...state.user, ...action.payload };
+      localStorage.setItem('user', JSON.stringify(state.user));
+    },
     // Call this if login fails
     authFailure: (state, action) => {
       state.isLoading = false;
@@ -57,7 +62,7 @@ export const authSlice = createSlice({
 });
 
 // Export the generated actions
-export const { authStart, loginSuccess, authFailure, logout } = authSlice.actions;
+export const { authStart, loginSuccess, updateUser, authFailure, logout } = authSlice.actions;
 
 // Export the reducer to add to your store
 export default authSlice.reducer;

@@ -8,6 +8,9 @@ import FarmMap from '../components/FarmMap';
 import FarmerInputForm from '../components/FarmerInputForm';
 import Charts from '../components/Charts';
 import { mockAnalysis } from '../data/mockAnalysis';
+import { analyzeFarm, explainAnalysis } from '../services/api';
+import ChatPanel from '../components/ChatPanel';
+import ExplanationCard from '../components/ExplanationCard';
 import './Dashboard.css';
 
 /* ---------- Small building blocks ---------- */
@@ -107,11 +110,15 @@ export default function Dashboard() {
   const [activeId, setActiveId] = useState('overview');
   const [farmLocation, setFarmLocation] = useState(null);
   const [submitted, setSubmitted] = useState(false);
-  // Later: replace with the response from POST /api/analyze/
-  const [analysis] = useState(mockAnalysis);
+  // Sample data until the farmer runs a real analysis (POST /api/analyze/)
+  const [analysis, setAnalysis] = useState(mockAnalysis);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState('');
+  const [explanation, setExplanation] = useState(null);
 
-  const email = useSelector((s) => s.auth.user?.email) ?? '';
-  const name = email ? email.split('@')[0] : 'Farmer';
+  const user = useSelector((s) => s.auth.user);
+  const email = user?.email ?? '';
+  const name = user?.full_name?.split(' ')[0] || (email ? email.split('@')[0] : 'Farmer');
 
   const strategies = analysis?.strategies ?? [];
   const best = strategies.reduce(
@@ -119,7 +126,8 @@ export default function Dashboard() {
     null
   );
   const current = strategies.find((s) => s.key === 'current');
-  const gain = best && current ? best.scores.overall - current.scores.overall : 0;
+  // Backend scores can be decimals — round to 1 place to avoid 1.7000000000000028
+  const gain = best && current ? Math.round((best.scores.overall - current.scores.overall) * 10) / 10 : 0;
   const isMock = analysis?.data_quality?.status === 'mock';
 
   // Highlight the sidebar item for the section in view
@@ -144,13 +152,28 @@ export default function Dashboard() {
   };
 
   const handleFarmSubmit = async (farmData) => {
-    console.log('Farmer submitted data:', farmData);
-    setSubmitted(true);
-    // Next step: send farmData to POST /api/analyze/ and store the result:
-    // const res = await fetch('http://127.0.0.1:8000/api/analyze/', { method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(farmData) });
-    // setAnalysis(await res.json());
+    setAnalyzing(true);
+    setAnalyzeError('');
+    setExplanation(null);
     goTo('analysis');
+
+    try {
+      // 1) POST /api/analyze/ -> strategies, climate, soil, alerts...
+      const result = await analyzeFarm(farmData);
+      setAnalysis(result);
+      setSubmitted(true);
+
+      // 2) POST /api/explain/ -> plain-language summary of the best strategy
+      try {
+        setExplanation(await explainAnalysis(result, farmData.lang));
+      } catch {
+        /* explanation is optional — charts still show */
+      }
+    } catch (err) {
+      setAnalyzeError(err.message);
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const activeLabel = NAV_ITEMS.find((n) => n.id === activeId)?.label ?? 'Overview';
@@ -233,8 +256,14 @@ export default function Dashboard() {
               />
               <StatCard
                 label="Data status"
-                value={isMock ? 'Sample data' : 'Live analysis'}
-                hint="NASA POWER · SoilGrids"
+                value={
+                  isMock
+                    ? 'Sample data'
+                    : analysis?.data_quality?.status === 'complete'
+                      ? 'Live analysis'
+                      : 'Partial data'
+                }
+                hint={(analysis?.data_quality?.sources ?? ['NASA POWER', 'SoilGrids']).join(' · ')}
                 icon="🛰️"
                 tone="violet"
               />
@@ -272,11 +301,99 @@ export default function Dashboard() {
             title="Rotation analysis"
             subtitle="How each strategy scores for your farm"
           >
-            <Charts analysis={analysis} />
+            <div className="space-y-4">
+              {analyzing && (
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sm text-sky-800">
+                  <span className="w-4 h-4 rounded-full border-2 border-sky-600 border-t-transparent animate-spin" />
+                  Analyzing your farm with NASA POWER and SoilGrids data… this can take a few seconds.
+                </div>
+              )}
+
+              {analyzeError && (
+                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-sm text-red-700" role="alert">
+                  <p className="font-semibold">Analysis failed</p>
+                  <p className="mt-1">{analyzeError}</p>
+                </div>
+              )}
+
+              {/* POST /api/explain/ result */}
+              {/* `key` resets the saved translations when a new analysis comes in */}
+              {explanation && (
+                <ExplanationCard
+                  key={analysis?.analysis_id}
+                  analysis={analysis}
+                  initial={explanation}
+                />
+              )}
+
+              {/* Alerts from the analysis: { severity_label, reason, action, month, crops, ... } */}
+              {!isMock && analysis?.alerts?.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-900">⚠️ Risk alerts for your current rotation</p>
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    {analysis.alerts.map((a, i) => {
+                      const level = (a.severity || '').toLowerCase();
+                      const tone =
+                        level === 'critical'
+                          ? 'border-red-200 bg-red-50 text-red-700'
+                          : level === 'warning' || level === 'serious'
+                            ? 'border-amber-200 bg-amber-50 text-amber-800'
+                            : 'border-sky-200 bg-sky-50 text-sky-800';
+                      return (
+                        <div key={i} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full border ${tone}`}>
+                              {a.severity_label || a.severity || 'Alert'}
+                            </span>
+                            {a.type && (
+                              <span className="text-xs font-medium text-slate-500 capitalize">
+                                {String(a.type).replace(/_/g, ' ')}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm text-slate-800">{a.reason || a.message || a.title}</p>
+                          {a.action && (
+                            <p className="mt-2 text-sm text-emerald-800">
+                              <span className="font-semibold">What to do: </span>
+                              {a.action}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Data quality warnings */}
+              {!isMock && analysis?.data_quality?.warnings?.length > 0 && (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data notes</p>
+                  <ul className="mt-1 list-disc pl-5 text-sm text-slate-600 space-y-0.5">
+                    {analysis.data_quality.warnings.map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <Charts analysis={analysis} />
+
+              {analysis?.disclaimer && !isMock && (
+                <p className="text-xs text-slate-500">{analysis.disclaimer}</p>
+              )}
+            </div>
           </Section>
 
-          {/* Placeholder anchor so the sidebar item has a target */}
-          <div id="assistant" />
+          {/* ---------- AI Assistant (POST /api/chat/) ---------- */}
+          <Section
+            id="assistant"
+            step="4"
+            title="Farm assistant"
+            subtitle="Ask about crops or your analysis"
+          >
+            <ChatPanel analysis={isMock ? null : analysis} />
+          </Section>
 
         </main>
 
