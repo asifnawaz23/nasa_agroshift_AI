@@ -178,7 +178,6 @@ function AboutContent({ isLoggedIn }) {
               </div>
               <figcaption className="p-5">
                 <p className="text-lg font-bold text-slate-900">{m.name}</p>
-                <p className="mt-1 text-sm text-slate-600">{m.role}</p>
               </figcaption>
             </figure>
           ))}
